@@ -782,7 +782,7 @@ struct OglSphereScene {
 	// VBOs for the cube's vertices and normals
 
 	const unsigned int GRID_SIZE{ 5 };
-	const float gridSizeScale = 0.15f;
+	const float gridSizeScale = 0.14f;
 
 	// random number generation
 	std::random_device rd;
@@ -821,9 +821,9 @@ public:
 						int ypos = (y - (GRID_SIZE / 2)) * 2;
 						int zpos = (z - (GRID_SIZE / 2)) * 2;
 						vec3 relativePosition = vec3(xpos, ypos, zpos);
-						if (relativePosition == vec3(0)) {
-							continue;
-						}
+						//if (relativePosition == vec3(0)) {
+						//	continue;
+						//}
 						mat4 loc = glm::translate(mat4(1.0f), gridSizeScale * relativePosition);
 						// translate down a bit
 						loc = glm::translate(loc, vec3(0, -0.2f, 0));
@@ -1007,7 +1007,7 @@ protected:
 		);
 
 		if (d < sphereScene->sphereRadius + controllers->baseDetectionRadius &&
-			controllers->r_HandTriggerDown()
+			controllers->r_IndexTriggerDown()
 		) {
 			std::cerr << d << std::endl;
 			sphereScene->chooseNewHighlightSphere();
