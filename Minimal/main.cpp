@@ -958,7 +958,7 @@ public:
 };
 */
 
-
+#include <chrono>
 
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp {
@@ -969,8 +969,17 @@ class ExampleApp : public RiftApp {
 	//std::shared_ptr<SphereScene> sphereScene;
 	std::shared_ptr<OglSphereScene> sphereScene;
 
+	// game
+	bool gameStarted;
+	unsigned int correctHits;
+	unsigned int totalHits;
+	const int maxGameTime = 60;
+	std::chrono::steady_clock::time_point startTime;
+
 public:
-	ExampleApp() { }
+	ExampleApp() :
+		gameStarted(false), correctHits(0), totalHits(0)
+	{ }
 
 protected:
 	void initGl() override {
@@ -988,11 +997,20 @@ protected:
 	}
 
 	void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) override {
-		sphereScene->render(projection, glm::inverse(headPose));
+		if (gameStarted) {
+			sphereScene->render(projection, glm::inverse(headPose));
+			// TODO: show game overlay
+		}
 		controllers->renderHands(projection, glm::inverse(headPose));
 		controllers->updateHandState();
 		handleInteractions();
+
+		if (checkEndGameState()) {
+			endGame();
+		}
 	}
+
+private:
 
 	void handleInteractions() {
 		if (controllers->r_HandTriggerDown())
@@ -1006,12 +1024,36 @@ protected:
 			)
 		);
 
+		// TODO: start game interaction
 		if (d < sphereScene->sphereRadius + controllers->baseDetectionRadius &&
 			controllers->r_IndexTriggerDown()
 		) {
 			std::cerr << d << std::endl;
 			sphereScene->chooseNewHighlightSphere();
 		}
+	}
+
+	void startGame() {
+		resetGame();
+		startTime = std::chrono::steady_clock::now();
+	}
+
+	void resetGame() {
+		gameStarted = false;
+		correctHits = 0;
+		totalHits = 0;
+	}
+	
+	bool checkEndGameState() {
+		std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
+
+		auto time_span = std::chrono::duration_cast<seconds>(t - startTime).count();
+		return time_span >= maxGameTime;
+	}
+
+	void endGame() {
+		gameStarted = false;
+		// TODO: show end game stuff
 	}
 };
 
