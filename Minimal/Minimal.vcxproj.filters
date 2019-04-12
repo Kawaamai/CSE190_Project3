@@ -39,6 +39,18 @@
     <None Include="basicFragment.fs">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="basicColor.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basicColor.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="oglBasicColor.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="oglBasicColor.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -54,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ControllerHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="oglShaderAttributes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,8 +1,54 @@
 #include "ControllerHandler.h"
+#include "oglShaderAttributes.h"
 
 ControllerHandler::ControllerHandler(const ovrSession & s) :
-	_session(s)
+	_session(s),
+	instanceCount(0),
+	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.05, 18, 12))
 {
+	using namespace oglplus;
+	try {
+		// attach the shaders to the program
+		prog.AttachShader(
+			FragmentShader()
+			.Source(GLSLSource(String(::Shader::openShaderFile(fragShader))))
+			.Compile()
+		);
+		prog.AttachShader(
+			VertexShader()
+			.Source(GLSLSource(String(::Shader::openShaderFile(vertexShader))))
+			.Compile()
+		);
+		prog.Link();
+		//prog.AttachShader(
+		//	FragmentShader()
+		//	.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.frag"))))
+		//	.Compile()
+		//);
+		//prog.AttachShader(
+		//	VertexShader()
+		//	.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.vert"))))
+		//	.Compile()
+		//);
+		//prog.Link();
+	}
+	catch (ProgramBuildError & err) {
+		throw std::runtime_error((const char*)err.what());
+	}
+
+	// link and use it
+	prog.Use();
+
+	vao = sphere.VAOForProgram(prog);
+	vao.Bind();
+
+	// color
+	Context::Bound(Buffer::Target::Array, colors).Data(instance_colors);
+	GLuint stride = sizeof(glm::vec4);
+	VertexArrayAttrib instance_attr(prog, Attribute::Color);
+	instance_attr.Pointer(4, DataType::Float, false, stride, (void*)0);
+	instance_attr.Divisor(1);
+	instance_attr.Enable();
 }
 
 
@@ -12,16 +58,50 @@ ControllerHandler::~ControllerHandler()
 
 void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat4 & modelview)
 {
+	std::vector<glm::mat4> instance_positions;
 	// update
 	updateHands();
 
 	// render hands
-	if (handStatus[0]) {
-		renderHand(projection, modelview, handPoses[0].Position);
+	if (handStatus[ovrHand_Left]) {
+		//renderHand(projection, modelview, handPoses[0].Position);
+		ovrVector3f handPosition = handPoses[ovrHand_Left].Position;
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		instance_positions.push_back(transform);
 	}
-	if (handStatus[1]) {
-		renderHand(projection, modelview, handPoses[1].Position);
+	if (handStatus[ovrHand_Right]) {
+		//renderHand(projection, modelview, handPoses[1].Position);
+		ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		instance_positions.push_back(transform);
 	}
+
+	// render the hands
+	// link and use it
+	prog.Use();
+	vao.Bind();
+	oglplus::Uniform<glm::mat4>(prog, "ProjectionMatrix").Set(projection);
+	oglplus::Uniform<glm::mat4>(prog, "CameraMatrix").Set(modelview);
+
+	// hand positions
+	oglplus::Context::Bound(oglplus::Buffer::Target::Array, instances).Data(instance_positions);
+	instanceCount = (GLuint)instance_positions.size();
+	int stride = sizeof(glm::mat4);
+	for (int i = 0; i < 4; ++i) {
+		oglplus::VertexArrayAttrib instance_attr(prog, Attribute::InstanceTransform + i);
+		size_t offset = sizeof(glm::vec4) * i;
+		instance_attr.Pointer(4, oglplus::DataType::Float, false, stride, (void*)offset);
+		instance_attr.Divisor(1);
+		instance_attr.Enable();
+	}
+
+	sphere.Draw(instanceCount);
+}
+
+void ControllerHandler::updateHandState()
+{
+	updateHands();
+	buttonHandler();
 }
 
 void ControllerHandler::updateHands()
@@ -43,17 +123,57 @@ void ControllerHandler::updateHands()
 	//handPosition[1] = handPoses[1].Position;
 }
 
-void ControllerHandler::renderHand(
-	const glm::mat4 & projection,
-	const glm::mat4 & modelview,
-	const ovrVector3f & handPosition)
+// assumes updated hand poses
+void ControllerHandler::buttonHandler()
 {
-	glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+	ovrInputState inputState;
 
-	shader.use();
-	shader.setMat4("ProjectionMatrix", projection);
-	shader.setMat4("CameraMatrix", modelview);
-	shader.setMat4("InstanceTransform", transform);
-	shader.setMat4("ModelMatrix", glm::scale(glm::mat4(1.0), scale));
-	handPointer.Draw(shader);
+	if (OVR_SUCCESS(ovr_GetInputState(_session, ovrControllerType_Touch, &inputState))) {
+		prevInputState = currInputState;
+		currInputState = inputState;
+		if (debug) {
+			// buttons
+			if (inputState.Buttons & ovrButton_A) {
+				std::cerr << "a button pressed" << std::endl;
+			}
+			if (inputState.Buttons & ovrButton_B) {
+				std::cerr << "b button pressed" << std::endl;
+			}
+			if (inputState.Buttons & ovrButton_X) {
+				std::cerr << "x button pressed" << std::endl;
+			}
+			if (inputState.Buttons & ovrButton_Y) {
+				std::cerr << "y button pressed" << std::endl;
+			}
+
+			// triggeres
+			if (inputState.HandTrigger[ovrHand_Right] > 0.5f) {
+				std::cerr << "right hand trigger pressed" << std::endl;
+			}
+			if (inputState.HandTrigger[ovrHand_Left] > 0.5f) {
+				std::cerr << "left hand trigger pressed" << std::endl;
+			}
+			if (inputState.IndexTrigger[ovrHand_Right] > 0.5f) {
+				std::cerr << "right index trigger pressed" << std::endl;
+			}
+			if (inputState.IndexTrigger[ovrHand_Left] > 0.5f) {
+				std::cerr << "left index trigger pressed" << std::endl;
+			}
+		}
+	}
 }
+
+//void ControllerHandler::renderHand(
+//	const glm::mat4 & projection,
+//	const glm::mat4 & modelview,
+//	const ovrVector3f & handPosition)
+//{
+//	glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+//
+//	//shader.use();
+//	//shader.setMat4("ProjectionMatrix", projection);
+//	//shader.setMat4("CameraMatrix", modelview);
+//	//shader.setMat4("InstanceTransform", transform);
+//	//shader.setMat4("ModelMatrix", glm::scale(glm::mat4(1.0), scale));
+//	//handPointer.Draw(shader);
+//}

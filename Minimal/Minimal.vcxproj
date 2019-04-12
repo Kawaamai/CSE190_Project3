@@ -135,16 +135,21 @@
     <ClCompile Include="Model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="basicColor.frag" />
+    <None Include="basicColor.vert" />
     <None Include="basicFragment.fs" />
     <None Include="basicVertex.vs" />
     <None Include="defCubeFS.fs" />
     <None Include="defCubeVS.vs" />
+    <None Include="oglBasicColor.frag" />
+    <None Include="oglBasicColor.vert" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ControllerHandler.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="oglShaderAttributes.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>

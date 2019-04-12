@@ -636,21 +636,11 @@ protected:
 #include <oglplus/bound/renderbuffer.hpp>
 #include <oglplus/bound/buffer.hpp>
 #include <oglplus/shapes/cube.hpp>
+#include <oglplus/shapes/sphere.hpp>
 #include <oglplus/shapes/wrapper.hpp>
 #pragma warning( default : 4068 4244 4267 4065)
 
-
-
-namespace Attribute {
-	enum {
-		Position = 0,
-		TexCoord0 = 1,
-		Normal = 2,
-		Color = 3,
-		TexCoord1 = 4,
-		InstanceTransform = 5,
-	};
-}
+#include "oglShaderAttributes.h"
 
 static const char * VERTEX_SHADER = R"SHADER(
 #version 410 core
@@ -770,15 +760,156 @@ public:
 
 //#include "Model.h"
 #include "ControllerHandler.h"
+#include <random>
 
+struct OglSphereScene {
+
+	// Program
+	oglplus::shapes::ShapeWrapper sphere;
+	const double sphereRadius = 1;
+	oglplus::Program prog;
+	oglplus::VertexArray vao;
+	GLuint instanceCount;
+	oglplus::Buffer instances;
+	oglplus::Buffer colors;
+	std::vector<mat4> instance_positions;
+	std::vector<vec4> instance_colors;
+
+	glm::vec4 baseColor = vec4(0, 0.7, 0.7f, 1.0f);
+	glm::vec4 highlightColor = vec4(0.8f, 0.8f, 0, 1.0f);
+	int highlightedSphere = 0;
+
+	// VBOs for the cube's vertices and normals
+
+	const unsigned int GRID_SIZE{ 5 };
+	const float gridSizeScale = 0.15f;
+
+	// random number generation
+	std::random_device rd;
+
+public:
+	OglSphereScene() : sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.07, 18, 12)) {
+		using namespace oglplus;
+		try {
+			// attach the shaders to the program
+			prog.AttachShader(
+				FragmentShader()
+				.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.frag"))))
+				.Compile()
+			);
+			prog.AttachShader(
+				VertexShader()
+				.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.vert"))))
+				.Compile()
+			);
+			prog.Link();
+		}
+		catch (ProgramBuildError & err) {
+			FAIL((const char*)err.what());
+		}
+
+		// link and use it
+		prog.Use(); 
+		vao = sphere.VAOForProgram(prog);
+		vao.Bind();
+		// Create a cube of cubes
+		{
+			for (unsigned int z = 0; z < GRID_SIZE; ++z) {
+				for (unsigned int y = 0; y < GRID_SIZE; ++y) {
+					for (unsigned int x = 0; x < GRID_SIZE; ++x) {
+						int xpos = (x - (GRID_SIZE / 2)) * 2;
+						int ypos = (y - (GRID_SIZE / 2)) * 2;
+						int zpos = (z - (GRID_SIZE / 2)) * 2;
+						vec3 relativePosition = vec3(xpos, ypos, zpos);
+						if (relativePosition == vec3(0)) {
+							continue;
+						}
+						mat4 loc = glm::translate(mat4(1.0f), gridSizeScale * relativePosition);
+						// translate down a bit
+						loc = glm::translate(loc, vec3(0, -0.2f, 0));
+						instance_positions.push_back(loc);
+						instance_colors.push_back(baseColor);
+					}
+				}
+			}
+
+			Context::Bound(Buffer::Target::Array, instances).Data(instance_positions);
+			instanceCount = (GLuint)instance_positions.size();
+			int stride = sizeof(mat4);
+			// position
+			for (int i = 0; i < 4; ++i) {
+				VertexArrayAttrib instance_attr(prog, Attribute::InstanceTransform + i);
+				size_t offset = sizeof(vec4) * i;
+				instance_attr.Pointer(4, DataType::Float, false, stride, (void*)offset);
+				instance_attr.Divisor(1);
+				instance_attr.Enable();
+			}
+
+			// color
+			Context::Bound(Buffer::Target::Array, colors).Data(instance_colors);
+			stride = sizeof(vec4);
+			VertexArrayAttrib instance_attr(prog, Attribute::Color);
+			instance_attr.Pointer(4, DataType::Float, false, stride, (void*)0);
+			instance_attr.Divisor(1);
+			instance_attr.Enable();
+
+			highlightedSphere = genRandNum();
+			chooseNewHighlightSphere();
+		}
+	}
+
+	void chooseNewHighlightSphere()
+	{
+		instance_colors[highlightedSphere] = baseColor;
+		highlightedSphere = genRandNum();
+		instance_colors[highlightedSphere] = highlightColor;
+
+		// link and use it
+		prog.Use();
+		vao.Bind();
+
+		// recolor
+		oglplus::Context::Bound(oglplus::Buffer::Target::Array, colors).Data(instance_colors);
+		GLuint stride = sizeof(vec4);
+		oglplus::VertexArrayAttrib instance_attr(prog, Attribute::Color);
+		instance_attr.Pointer(4, oglplus::DataType::Float, false, stride, (void*)0);
+		instance_attr.Divisor(1);
+		instance_attr.Enable();
+	}
+
+	void render(const mat4 & projection, const mat4 & modelview) {
+		using namespace oglplus;
+		prog.Use();
+		Uniform<mat4>(prog, "ProjectionMatrix").Set(projection);
+		Uniform<mat4>(prog, "CameraMatrix").Set(modelview);
+		vao.Bind();
+		sphere.Draw(instanceCount);
+	}
+
+private:
+
+	int genRandNum()
+	{
+		// random generation
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dis(0, instanceCount - 1);
+		return dis(gen);
+	}
+};
+
+/*
 struct SphereScene {
 	// Program
 	std::string path = "sphere2.obj";
 	// model
 	// TODO: make this into a class so we can properly instantiate this
 	Model m = Model(path);
-	//Shader shader = Shader("defCubeVS.vs", "defCubeFS.fs");
-	Shader shader = Shader("basicVertex.vs", "basicFragment.fs");
+	//Shader shader = Shader("basicVertex.vs", "basicFragment.fs");
+	Shader shader = Shader("basicColor.vert", "basicColor.frag");
+
+	// colors
+	vec4 defaultColor = vec4(0, 0, 0.3, 1.0);
+	vec4 highlightColor = vec4(.9, 0, 0, 1.0);
 
 	// other
 	std::vector<mat4> instance_positions;
@@ -819,10 +950,14 @@ public:
 			shader.setMat4("CameraMatrix", modelview);
 			shader.setMat4("InstanceTransform", mat);
 			shader.setMat4("ModelMatrix", glm::scale(mat4(1.0), vec3(0.1, 0.1, 0.1)));
+			shader.setVec4("Color", defaultColor);
 			m.Draw(shader);
 		}
 	}
+
 };
+*/
+
 
 
 // An example application that renders a simple cube
@@ -831,7 +966,8 @@ class ExampleApp : public RiftApp {
 	std::shared_ptr<ControllerHandler> controllers;
 
 	// sphere grid
-	std::shared_ptr<SphereScene> sphereScene;
+	//std::shared_ptr<SphereScene> sphereScene;
+	std::shared_ptr<OglSphereScene> sphereScene;
 
 public:
 	ExampleApp() { }
@@ -843,7 +979,7 @@ protected:
 		glClearColor(0.9f, 0.9f, 0.9f, 0.0f); // background color
 		glEnable(GL_DEPTH_TEST);
 		ovr_RecenterTrackingOrigin(_session);
-		sphereScene = std::shared_ptr<SphereScene>(new SphereScene());
+		sphereScene = std::shared_ptr<OglSphereScene>(new OglSphereScene());
 		controllers = std::shared_ptr<ControllerHandler>(new ControllerHandler(_session));
 	}
 
@@ -854,6 +990,28 @@ protected:
 	void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) override {
 		sphereScene->render(projection, glm::inverse(headPose));
 		controllers->renderHands(projection, glm::inverse(headPose));
+		controllers->updateHandState();
+		handleInteractions();
+	}
+
+	void handleInteractions() {
+		if (controllers->r_HandTriggerDown())
+			std::cerr << "right hand trigger down" << std::endl;
+		if (controllers->r_AButtonDown())
+			std::cerr << "A button down" << std::endl;
+		float d = glm::distance(
+			controllers->getHandPosition(ovrHand_Right),
+			glm::vec3(
+				sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
+			)
+		);
+
+		if (d < sphereScene->sphereRadius + controllers->baseDetectionRadius &&
+			controllers->r_HandTriggerDown()
+		) {
+			std::cerr << d << std::endl;
+			sphereScene->chooseNewHighlightSphere();
+		}
 	}
 };
 

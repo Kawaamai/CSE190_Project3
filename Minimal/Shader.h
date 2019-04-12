@@ -17,6 +17,29 @@ class Shader
 {
 public:
     unsigned int ID;
+
+	static std::string openShaderFile(const char* path)
+	{
+		std::string code;
+		std::ifstream shaderFile;
+		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		try {
+			// open file
+			shaderFile.open(path);
+			std::stringstream shaderStream;
+			// read file's buffer contents into streams	
+			shaderStream << shaderFile.rdbuf();
+			// close file handlers
+			shaderFile.close();
+			// convert stream into string
+			code = shaderStream.str();
+		} catch (std::ifstream::failure e) {
+			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+		}
+
+		return code;
+	}
+
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     Shader(const char* vertexPath, const char* fragmentPath, const bool direct = false, const char* geometryPath = nullptr)
