@@ -766,7 +766,7 @@ struct OglSphereScene {
 
 	// Program
 	oglplus::shapes::ShapeWrapper sphere;
-	const double sphereRadius = 1;
+	const double sphereRadius = .07;
 	oglplus::Program prog;
 	oglplus::VertexArray vao;
 	GLuint instanceCount;
@@ -971,14 +971,14 @@ class ExampleApp : public RiftApp {
 
 	// game
 	bool gameStarted;
-	unsigned int correctHits;
-	unsigned int totalHits;
+	unsigned int correctClicks;
+	unsigned int totalClicks;
 	const int maxGameTime = 60;
 	std::chrono::steady_clock::time_point startTime;
 
 public:
 	ExampleApp() :
-		gameStarted(false), correctHits(0), totalHits(0)
+		gameStarted(false), correctClicks(0), totalClicks(0)
 	{ }
 
 protected:
@@ -1001,11 +1001,11 @@ protected:
 			sphereScene->render(projection, glm::inverse(headPose));
 			// TODO: show game overlay
 		}
+		handleInteractions();
 		controllers->renderHands(projection, glm::inverse(headPose));
 		controllers->updateHandState();
-		handleInteractions();
 
-		if (checkEndGameState()) {
+		if (gameStarted && checkEndGameState()) {
 			endGame();
 		}
 	}
@@ -1024,36 +1024,52 @@ private:
 			)
 		);
 
-		// TODO: start game interaction
-		if (d < sphereScene->sphereRadius + controllers->baseDetectionRadius &&
-			controllers->r_IndexTriggerDown()
-		) {
-			std::cerr << d << std::endl;
-			sphereScene->chooseNewHighlightSphere();
+		if (controllers->r_IndexTriggerDown()) {
+			if (!gameStarted)
+			{
+				startGame();
+			}
+			else {
+				std::cerr << d << std::endl;
+				if (d < (sphereScene->sphereRadius + controllers->baseDetectionRadius)) {
+					correctClicks++;
+					sphereScene->chooseNewHighlightSphere();
+				}
+				totalClicks++;
+			}
+
 		}
+
 	}
 
 	void startGame() {
 		resetGame();
+		gameStarted = true;
+		std::cout << "Start Game" << std::endl;
 		startTime = std::chrono::steady_clock::now();
 	}
 
 	void resetGame() {
 		gameStarted = false;
-		correctHits = 0;
-		totalHits = 0;
+		correctClicks = 0;
+		totalClicks = 0;
 	}
 	
 	bool checkEndGameState() {
 		std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
-
-		auto time_span = std::chrono::duration_cast<seconds>(t - startTime).count();
+		auto time_span = std::chrono::duration_cast<std::chrono::seconds>(t - startTime).count();
+		//std::cerr << "time: " << time_span << std::endl;
 		return time_span >= maxGameTime;
 	}
 
 	void endGame() {
 		gameStarted = false;
 		// TODO: show end game stuff
+		std::cout << "End Game" << std::endl;
+		std::cout << "correct number of clicked spheres: "
+			+ std::to_string(correctClicks)
+			+ "/" + std::to_string(totalClicks)
+			<< std::endl;
 	}
 };
 
