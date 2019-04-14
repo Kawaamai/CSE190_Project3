@@ -24,6 +24,7 @@
 //#include "Model.h"
 #include "Shader.h" // has glm.hpp
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class ControllerHandler
 {
@@ -41,6 +42,7 @@ public:
 	ovrPosef handPoses[2];  // These are position and orientation in meters in room coordinates, relative to tracking origin. Right-handed cartesian coordinates.
 							// ovrQuatf     Orientation;
 							// ovrVector3f  Position;
+	ovrPosef lastHandPoses[2];
 	ovrInputState prevInputState, currInputState;
 	
 	// hand model information
@@ -75,6 +77,22 @@ public:
 		ovrVector3f handPosition = handPoses[hand].Position;
 		return glm::vec3(handPosition.x, handPosition.y, handPosition.z);
 	}
+	glm::vec3 getHandPositionChange(unsigned int hand) {
+		ovrVector3f currHandPosition = handPoses[hand].Position;
+		ovrVector3f lastHandPosition = lastHandPoses[hand].Position;
+	
+		return glm::vec3(currHandPosition.x, currHandPosition.y, currHandPosition.z)
+			- glm::vec3(lastHandPosition.x, lastHandPosition.y, lastHandPosition.z);
+	}
+	// relative hand rotation from last to current rotations
+	glm::quat getHandRotationChange(unsigned int hand) {
+		ovrQuatf currHandRotation = handPoses[hand].Orientation;
+		ovrQuatf lastHandRotation = lastHandPoses[hand].Orientation;
+		glm::quat currHandQuat = glm::quat(currHandRotation.w, currHandRotation.x, currHandRotation.y, currHandRotation.z);
+		glm::quat lastHandQuat = glm::quat(lastHandRotation.w, lastHandRotation.x, lastHandRotation.y, lastHandRotation.z);
+
+		return glm::inverse(lastHandQuat) * currHandQuat;
+	}
 
 	// button handlers
 	bool r_HandTriggerDown() {
@@ -108,6 +126,44 @@ public:
 	bool l_YButtonDown() {
 		return ((currInputState.Buttons & ovrButton_Y) &&
 			((prevInputState.Buttons & ovrButton_Y) == 0));
+	}
+	bool r_HandTriggerUp() {
+		return ((prevInputState.HandTrigger[ovrHand_Right] > 0.5f) &&
+			(currInputState.HandTrigger[ovrHand_Right] < 0.5f));
+	}
+	bool l_HandTriggerUp() {
+		return ((prevInputState.HandTrigger[ovrHand_Left] > 0.5f) &&
+			(currInputState.HandTrigger[ovrHand_Left] < 0.5f));
+	}
+	bool r_IndexTriggerUp() {
+		return ((prevInputState.IndexTrigger[ovrHand_Right] > 0.5f) &&
+			(currInputState.IndexTrigger[ovrHand_Right] < 0.5f));
+	}
+	bool l_IndexTriggerUp() {
+		return ((prevInputState.IndexTrigger[ovrHand_Left] > 0.5f) &&
+			(currInputState.IndexTrigger[ovrHand_Left] < 0.5f));
+	}
+	bool r_AButtonUp() {
+		return ((prevInputState.Buttons & ovrButton_A) &&
+			((currInputState.Buttons & ovrButton_A) == 0));
+	}
+	bool r_BButtonUp() {
+		return ((prevInputState.Buttons & ovrButton_B) &&
+			((currInputState.Buttons & ovrButton_B) == 0));
+	}
+	bool l_XButtonUp() {
+		return ((prevInputState.Buttons & ovrButton_X) &&
+			((currInputState.Buttons & ovrButton_X) == 0));
+	}
+	bool l_YButtonUp() {
+		return ((prevInputState.Buttons & ovrButton_Y) &&
+			((currInputState.Buttons & ovrButton_Y) == 0));
+	}
+	bool isHandTriggerPressed(unsigned int hand) {
+		return currInputState.HandTrigger[hand] > 0.5f;
+	}
+	bool isIndexTriggerPressed(unsigned int hand) {
+		return currInputState.IndexTrigger[hand] > 0.5f;
 	}
 
 private:

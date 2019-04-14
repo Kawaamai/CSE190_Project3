@@ -51,6 +51,18 @@
     <None Include="oglBasicColor.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="AvatarFragmentShader.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="AvatarFragmentShader_CombinedMesh.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="AvatarFragmentShaderPBS.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="AvatarVertexShader.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">

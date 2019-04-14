@@ -60,7 +60,7 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 {
 	std::vector<glm::mat4> instance_positions;
 	// update
-	updateHands();
+	//updateHands();
 
 	// render hands
 	if (handStatus[ovrHand_Left]) {
@@ -108,7 +108,7 @@ void ControllerHandler::updateHands()
 {
 	double displayMidpointSeconds = ovr_GetPredictedDisplayTime(_session, 0);
 	ovrTrackingState trackState = ovr_GetTrackingState(_session, displayMidpointSeconds, ovrTrue);
-
+	
 	handStatus[0] = trackState.HandStatusFlags[0];
 	handStatus[1] = trackState.HandStatusFlags[1];
 
@@ -116,6 +116,8 @@ void ControllerHandler::updateHands()
 	//std::cerr << "handStatus[left]  = " << handStatus[ovrHand_Left] << std::endl;
 	//std::cerr << "handStatus[right] = " << handStatus[ovrHand_Right] << std::endl;
 
+	lastHandPoses[0] = handPoses[0];
+	lastHandPoses[1] = handPoses[1];
 	handPoses[0] = trackState.HandPoses[0].ThePose;
 	handPoses[1] = trackState.HandPoses[1].ThePose;
 	//ovrVector3f handPosition[2];

@@ -314,6 +314,7 @@ private:
 
 #include <OVR_CAPI.h>
 #include <OVR_CAPI_GL.h>
+#include <OVR_Avatar.h>
 
 namespace ovr {
 
@@ -772,6 +773,7 @@ struct OglSphereScene {
 	GLuint instanceCount;
 	oglplus::Buffer instances;
 	oglplus::Buffer colors;
+	std::vector<mat4> base_instance_positions;
 	std::vector<mat4> instance_positions;
 	std::vector<vec4> instance_colors;
 
@@ -783,6 +785,8 @@ struct OglSphereScene {
 
 	const unsigned int GRID_SIZE{ 5 };
 	const float gridSizeScale = 0.14f;
+	glm::mat4 orientation = glm::mat4(1.0f);
+	glm::mat4 translation = glm::mat4(1.0f);
 
 	// random number generation
 	std::random_device rd;
@@ -833,6 +837,7 @@ public:
 				}
 			}
 
+			base_instance_positions = instance_positions;
 			Context::Bound(Buffer::Target::Array, instances).Data(instance_positions);
 			instanceCount = (GLuint)instance_positions.size();
 			int stride = sizeof(mat4);
@@ -879,11 +884,22 @@ public:
 
 	void render(const mat4 & projection, const mat4 & modelview) {
 		using namespace oglplus;
+		updatePosition();
 		prog.Use();
 		Uniform<mat4>(prog, "ProjectionMatrix").Set(projection);
 		Uniform<mat4>(prog, "CameraMatrix").Set(modelview);
+		//Uniform<mat4>(prog, "MModelMatrix").Set((100.0f * translation) * orientation);
+		//Uniform<mat4>(prog, "ModelMatrix").Set(mat4(1.0f));
 		vao.Bind();
+
 		sphere.Draw(instanceCount);
+	}
+
+	void resetPositions() {
+		translation = glm::mat4(1.0f);
+		orientation = glm::mat4(1.0f);
+		instance_positions = base_instance_positions;
+		updatePosition();
 	}
 
 private:
@@ -894,6 +910,29 @@ private:
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis(0, instanceCount - 1);
 		return dis(gen);
+	}
+
+	void updatePosition() {
+		using namespace oglplus;
+		for (unsigned int i = 0; i < instanceCount; i++) {
+			//instance_positions[i] = base_instance_positions[i] * translation * orientation;
+			//instance_positions[i] = (orientation * base_instance_positions[i]) * translation;
+			instance_positions[i] = translation * (orientation * base_instance_positions[i]);
+			//instance_positions[i] = translation * orientation * base_instance_positions[i];
+		}
+
+		prog.Use();
+		vao.Bind();
+		Context::Bound(Buffer::Target::Array, instances).Data(instance_positions);
+		GLuint stride = sizeof(mat4);
+		// position
+		for (int i = 0; i < 4; ++i) {
+			VertexArrayAttrib instance_attr(prog, Attribute::InstanceTransform + i);
+			size_t offset = sizeof(vec4) * i;
+			instance_attr.Pointer(4, DataType::Float, false, stride, (void*)offset);
+			instance_attr.Divisor(1);
+			instance_attr.Enable();
+		}
 	}
 };
 
@@ -976,9 +1015,12 @@ class ExampleApp : public RiftApp {
 	const int maxGameTime = 60;
 	std::chrono::steady_clock::time_point startTime;
 
+	// object interaction
+	bool grabbing;
+
 public:
 	ExampleApp() :
-		gameStarted(false), correctClicks(0), totalClicks(0)
+		gameStarted(false), correctClicks(0), totalClicks(0), grabbing(false)
 	{ }
 
 protected:
@@ -1001,9 +1043,9 @@ protected:
 			sphereScene->render(projection, glm::inverse(headPose));
 			// TODO: show game overlay
 		}
+		controllers->updateHandState();
 		handleInteractions();
 		controllers->renderHands(projection, glm::inverse(headPose));
-		controllers->updateHandState();
 
 		if (gameStarted && checkEndGameState()) {
 			endGame();
@@ -1013,46 +1055,76 @@ protected:
 private:
 
 	void handleInteractions() {
-		if (controllers->r_HandTriggerDown())
-			std::cerr << "right hand trigger down" << std::endl;
-		if (controllers->r_AButtonDown())
-			std::cerr << "A button down" << std::endl;
-		float d = glm::distance(
-			controllers->getHandPosition(ovrHand_Right),
-			glm::vec3(
-				sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
-			)
-		);
+		float handToHighlightSphereDist = 10000.0f;
+
+		if (gameStarted) {
+			// calc distance
+			handToHighlightSphereDist = glm::distance(
+				controllers->getHandPosition(ovrHand_Right),
+				glm::vec3(
+					sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
+				)
+			);
+
+			// grabbing
+			if (grabbing) {
+				if (controllers->l_HandTriggerUp()) {
+					grabbing = false;
+					std::cerr << "not grabbing" << std::endl;
+				}
+				else {
+					sphereScene->translation
+						= glm::translate(sphereScene->translation, controllers->getHandPositionChange(ovrHand_Left));
+
+					glm::vec3 offset = controllers->getHandPosition(ovrHand_Left) -
+						glm::vec3(sphereScene->translation * sphereScene->orientation * glm::vec4(0.0f));
+					glm::mat4 offset_trans = glm::translate(-1.0f * offset);
+					glm::mat4 offset_trans2 = glm::translate(offset);
+					sphereScene->orientation
+						= offset_trans2 * (glm::mat4_cast(controllers->getHandRotationChange(ovrHand_Left)) * (offset_trans * sphereScene->orientation));
+					//glm::vec3 debug = sphereScene->orientation * glm::vec4(1, 0, 0, 1);
+					//std::cerr << debug.x << " " << debug.y << " " << debug.z << std::endl;
+				}
+			}
+			// TODO: there is a problem with the grabbing after we move it
+			else { // is not grabbing
+				float handToSphereGridDist
+					= glm::distance(controllers->getHandPosition(ovrHand_Left),
+						glm::vec3(sphereScene->translation * sphereScene->orientation * glm::vec4(0.0f)));
+				//std::cerr << handToSphereGridDist << std::endl;
+
+				if (controllers->l_HandTriggerDown() &&
+					handToSphereGridDist < 0.6f) { // rough sphere around the grid
+					grabbing = true;
+					std::cerr << "grabbing" << std::endl;
+				}
+			}
+		}
 
 		if (controllers->r_IndexTriggerDown()) {
-			if (!gameStarted)
-			{
+			if (!gameStarted) {
 				startGame();
 			}
 			else {
-				std::cerr << d << std::endl;
-				if (d < (sphereScene->sphereRadius + controllers->baseDetectionRadius)) {
+				std::cerr << handToHighlightSphereDist << std::endl;
+				if (handToHighlightSphereDist < (sphereScene->sphereRadius + controllers->baseDetectionRadius)) {
 					correctClicks++;
 					sphereScene->chooseNewHighlightSphere();
 				}
 				totalClicks++;
 			}
-
 		}
 
 	}
 
 	void startGame() {
-		resetGame();
+		sphereScene->resetPositions();
 		gameStarted = true;
-		std::cout << "Start Game" << std::endl;
-		startTime = std::chrono::steady_clock::now();
-	}
-
-	void resetGame() {
-		gameStarted = false;
 		correctClicks = 0;
 		totalClicks = 0;
+		grabbing = false;
+		std::cout << "Start Game" << std::endl;
+		startTime = std::chrono::steady_clock::now();
 	}
 	
 	bool checkEndGameState() {
@@ -1064,6 +1136,7 @@ private:
 
 	void endGame() {
 		gameStarted = false;
+		grabbing = false;
 		// TODO: show end game stuff
 		std::cout << "End Game" << std::endl;
 		std::cout << "correct number of clicked spheres: "
@@ -1097,6 +1170,8 @@ int main(int argc, char **argv) {
 		if (!OVR_SUCCESS(ovr_Initialize(nullptr))) {
 			FAIL("Failed to initialize the Oculus SDK");
 		}
+		//ovrAvatar_Initialize(nullptr);
+
 		result = ExampleApp().run();
 	}
 	catch (std::exception & error) {
@@ -1104,5 +1179,6 @@ int main(int argc, char **argv) {
 		std::cerr << error.what() << std::endl;
 	}
 	ovr_Shutdown();
+	//ovrAvatar_Shutdown();
 	return result;
 }
