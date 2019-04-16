@@ -303,6 +303,7 @@ void glDebugCallbackHandler(GLenum source, GLenum type, GLuint id, GLenum severi
 #include <chrono>
 
 #include "AvatarHandler.h"
+#include "Lighting.h"
 
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp {
@@ -326,6 +327,8 @@ class ExampleApp : public RiftApp {
 	bool grabbing;
 	glm::vec3 grabOffset;
 
+	Lighting sceneLight(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
+
 public:
 	ExampleApp() :
 		gameStarted(false), correctClicks(0), totalClicks(0), grabbing(false)
@@ -340,8 +343,9 @@ protected:
 		ovr_RecenterTrackingOrigin(_session);
 		//sphereScene = std::shared_ptr<OglSphereScene>(new OglSphereScene());
 		//controllers = std::shared_ptr<ControllerHandler>(new ControllerHandler(_session));
-		sphereScene = std::make_unique<SphereScene>();
-		controllers = std::make_unique<ControllerHandler>(_session);
+		// Note: to disable lighting, don't pass in sceneLight
+		sphereScene = std::make_unique<SphereScene>(sceneLight);
+		controllers = std::make_unique<ControllerHandler>(_session, sceneLight);
 		//av = std::make_unique<AvatarHandler>(_session);
 	}
 

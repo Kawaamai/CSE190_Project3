@@ -66,6 +66,12 @@
     <None Include="AvatarVertexShader.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="lightedColor.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="lightedColor.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -102,6 +108,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AvatarHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lighting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

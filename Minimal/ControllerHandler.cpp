@@ -4,7 +4,8 @@
 ControllerHandler::ControllerHandler(const ovrSession & s) :
 	_session(s),
 	instanceCount(0),
-	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.01, 18, 12))
+	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.01, 18, 12)),
+	lighting(false);
 {
 	using namespace oglplus;
 	try {
@@ -17,6 +18,47 @@ ControllerHandler::ControllerHandler(const ovrSession & s) :
 		prog.AttachShader(
 			VertexShader()
 			.Source(GLSLSource(String(::Shader::openShaderFile(vertexShader))))
+			.Compile()
+		);
+		prog.Link();
+	}
+	catch (ProgramBuildError & err) {
+		throw std::runtime_error((const char*)err.what());
+	}
+
+	// link and use it
+	prog.Use();
+
+	vao = sphere.VAOForProgram(prog);
+	vao.Bind();
+
+	// color
+	Context::Bound(Buffer::Target::Array, colors).Data(instance_colors);
+	GLuint stride = sizeof(glm::vec4);
+	VertexArrayAttrib instance_attr(prog, Attribute::Color);
+	instance_attr.Pointer(4, DataType::Float, false, stride, (void*)0);
+	instance_attr.Divisor(1);
+	instance_attr.Enable();
+}
+
+ControllerHandler::ControllerHandler(const ovrSession & s, Lighting light) :
+	_session(s),
+	instanceCount(0),
+	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.01, 18, 12)),
+	sceneLight(light),
+	lighting(true)
+{
+	using namespace oglplus;
+	try {
+		// attach the shaders to the program
+		prog.AttachShader(
+			FragmentShader()
+			.Source(GLSLSource(String(::Shader::openShaderFile(lightFragShader))))
+			.Compile()
+		);
+		prog.AttachShader(
+			VertexShader()
+			.Source(GLSLSource(String(::Shader::openShaderFile(lightVertexShader))))
 			.Compile()
 		);
 		prog.Link();
@@ -75,6 +117,10 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 	vao.Bind();
 	oglplus::Uniform<glm::mat4>(prog, "ProjectionMatrix").Set(projection);
 	oglplus::Uniform<glm::mat4>(prog, "CameraMatrix").Set(modelview);
+	if (lighting) {
+		oglplus::Uniform<glm::vec3>(prog, "lightPos").Set(sceneLight.lightPos);
+		oglplus::Uniform<glm::vec3>(prog, "lightColor").Set(sceneLight.lightColor);
+	}
 
 	// hand positions
 	oglplus::Context::Bound(oglplus::Buffer::Target::Array, instances).Data(instance_positions);

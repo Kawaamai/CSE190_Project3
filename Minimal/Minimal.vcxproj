@@ -146,6 +146,8 @@
     <None Include="basicVertex.vs" />
     <None Include="defCubeFS.fs" />
     <None Include="defCubeVS.vs" />
+    <None Include="lightedColor.frag" />
+    <None Include="lightedColor.vert" />
     <None Include="oglBasicColor.frag" />
     <None Include="oglBasicColor.vert" />
     <None Include="packages.config" />
@@ -155,6 +157,7 @@
     <ClInclude Include="ControllerHandler.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="GlfwApp.h" />
+    <ClInclude Include="Lighting.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="oglShaderAttributes.h" />

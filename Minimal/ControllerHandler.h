@@ -25,6 +25,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "OvrHelper.h"
+#include "Lighting.h"
 
 class ControllerHandler
 {
@@ -49,6 +50,8 @@ public:
 	//std::string modelPath = "sphere2.obj";
 	const char *vertexShader = "oglBasicColor.vert";
 	const char *fragShader = "oglBasicColor.frag";
+	const char *lightVertexShader = "lightColor.vert";
+	const char *lightFragShader = "lightColor.frag";
 	oglplus::shapes::ShapeWrapper sphere;
 	const double baseDetectionRadius = 0.01;
 	oglplus::Program prog;
@@ -68,7 +71,12 @@ public:
 
 	const float handOffset = 0.1;
 
+	//lighting
+	Lighting sceneLight;
+	bool lighting = false;
+
 	ControllerHandler(const ovrSession & s);
+	ControllerHandler(const ovrSession & s, Lighting light);
 	~ControllerHandler();
 
 	void renderHands(const glm::mat4 & projection, const glm::mat4 & modelview);

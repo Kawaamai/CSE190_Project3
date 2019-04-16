@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "ControllerHandler.h"
 #include "oglShaderAttributes.h"
+#include "Lighting.h"
 #include <random>
 
 class SphereScene
@@ -35,8 +36,11 @@ public:
 
 	// random number generation
 	std::random_device rd;
+	Lighting sceneLight;
+	bool lighting = false;
 
 	SphereScene();
+	SphereScene(Lighting light);
 	~SphereScene();
 
 	void chooseNewHighlightSphere();
