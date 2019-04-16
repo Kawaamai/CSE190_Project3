@@ -25,7 +25,7 @@ limitations under the License.
 #include <Windows.h>
 
 #define __STDC_FORMAT_MACROS 1
-#define APP_ID "958062084316416"
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -313,7 +313,7 @@ class ExampleApp : public RiftApp {
 	//std::shared_ptr<SphereScene> sphereScene;
 	std::unique_ptr<SphereScene> sphereScene;
 
-	//std::unique_ptr<AvatarHandler> av;
+	std::unique_ptr<AvatarHandler> av;
 
 	// game
 	bool gameStarted;
@@ -342,7 +342,7 @@ protected:
 		//controllers = std::shared_ptr<ControllerHandler>(new ControllerHandler(_session));
 		sphereScene = std::make_unique<SphereScene>();
 		controllers = std::make_unique<ControllerHandler>(_session);
-		//av = std::make_unique<AvatarHandler>(_session);
+		av = std::make_unique<AvatarHandler>(_session);
 	}
 
 	void shutdownGl() override {
@@ -363,22 +363,6 @@ protected:
 		}
 	}
 
-	//void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) override {
-	//	controllers->updateHandState();
-	//	handleInteractions();
-	//	controllers->renderHands(projection, glm::inverse(headPose));
-	//	if (gameStarted) {
-	//		sphereScene->render(projection, glm::inverse(headPose));
-	//		// TODO: show game overlay
-	//	}
-
-	//	//av->updateAvatar(projection, headPose, headPos);
-
-	//	if (gameStarted && checkEndGameState()) {
-	//		endGame();
-	//	}
-	//}
-
 private:
 
 	void handleInteractions() {
@@ -387,8 +371,7 @@ private:
 		if (gameStarted) {
 			// calc distance
 			handToHighlightSphereDist = glm::distance(
-				//controllers->getHandPosition(ovrHand_Right),
-				controllers->getPointerPosition(),
+				controllers->getHandPosition(ovrHand_Right),
 				glm::vec3(
 					sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
 				)
@@ -504,7 +487,7 @@ int main(int argc, char **argv) {
 		if (!OVR_SUCCESS(ovr_Initialize(nullptr))) {
 			FAIL("Failed to initialize the Oculus SDK");
 		}
-		ovrAvatar_Initialize(APP_ID);
+		ovrAvatar_Initialize(nullptr);
 
 		result = ExampleApp().run();
 	}

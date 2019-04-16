@@ -4,7 +4,7 @@
 ControllerHandler::ControllerHandler(const ovrSession & s) :
 	_session(s),
 	instanceCount(0),
-	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.05, 18, 12))
+	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.01, 18, 12))
 {
 	using namespace oglplus;
 	try {
@@ -20,17 +20,6 @@ ControllerHandler::ControllerHandler(const ovrSession & s) :
 			.Compile()
 		);
 		prog.Link();
-		//prog.AttachShader(
-		//	FragmentShader()
-		//	.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.frag"))))
-		//	.Compile()
-		//);
-		//prog.AttachShader(
-		//	VertexShader()
-		//	.Source(GLSLSource(String(::Shader::openShaderFile("oglBasicColor.vert"))))
-		//	.Compile()
-		//);
-		//prog.Link();
 	}
 	catch (ProgramBuildError & err) {
 		throw std::runtime_error((const char*)err.what());
@@ -66,14 +55,18 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 	if (handStatus[ovrHand_Left]) {
 		//renderHand(projection, modelview, handPoses[0].Position);
 		ovrVector3f handPosition = handPoses[ovrHand_Left].Position;
-		glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), ovr::toGlm(handPosition));
 		instance_positions.push_back(transform);
 	}
 	if (handStatus[ovrHand_Right]) {
 		//renderHand(projection, modelview, handPoses[1].Position);
 		ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
-		glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
-		instance_positions.push_back(transform);
+		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), ovr::toGlm(handPosition));
+		glm::mat4 offset
+			= glm::translate(glm::mat4(), glm::vec3(glm::mat4_cast(ovr::toGlm(handPoses[ovrHand_Right].Orientation)) * glm::vec4(0, 0, -handOffset, 1)));
+		instance_positions.push_back(offset * transform);
 	}
 
 	// render the hands
@@ -104,6 +97,7 @@ void ControllerHandler::updateHandState()
 	buttonHandler();
 }
 
+// Important: make sure this is only called one time each frame
 void ControllerHandler::updateHands()
 {
 	double displayMidpointSeconds = ovr_GetPredictedDisplayTime(_session, 0);

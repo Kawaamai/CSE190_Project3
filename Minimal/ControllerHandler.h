@@ -3,8 +3,6 @@
 #ifndef CONTROLLER_HANDLER_H
 #define CONTROLLER_HANDLER_H
 
-#include <OVR_CAPI.h>
-#include <OVR_CAPI_GL.h>
 #include <GL/glew.h>
 
 #pragma warning( disable : 4068 4244 4267 4065)
@@ -25,6 +23,8 @@
 #include "Shader.h" // has glm.hpp
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+
+#include "OvrHelper.h"
 
 class ControllerHandler
 {
@@ -50,7 +50,7 @@ public:
 	const char *vertexShader = "oglBasicColor.vert";
 	const char *fragShader = "oglBasicColor.frag";
 	oglplus::shapes::ShapeWrapper sphere;
-	const double baseDetectionRadius = 0.05;
+	const double baseDetectionRadius = 0.01;
 	oglplus::Program prog;
 	oglplus::VertexArray vao;
 	GLuint instanceCount;
@@ -66,32 +66,47 @@ public:
 	//Shader shader = Shader("basicVertex.vs", "basicFragment.fs");
 	const glm::vec3 scale = glm::vec3(0.05f);
 
+	const float handOffset = 0.1;
+
 	ControllerHandler(const ovrSession & s);
 	~ControllerHandler();
 
 	void renderHands(const glm::mat4 & projection, const glm::mat4 & modelview);
 	void updateHandState();
 
+	glm::vec3 getPointerPosition() {
+		glm::mat4 offset
+			= glm::translate(glm::mat4(), glm::vec3(glm::mat4_cast(ovr::toGlm(handPoses[ovrHand_Right].Orientation)) * glm::vec4(0, 0, -handOffset, 1)));
+		return offset * glm::vec4(ovr::toGlm(handPoses[ovrHand_Right].Position), 1.0f);
+	}
+
 	// hand positions
 	glm::vec3 getHandPosition(unsigned int hand) {
-		ovrVector3f handPosition = handPoses[hand].Position;
-		return glm::vec3(handPosition.x, handPosition.y, handPosition.z);
+		return ovr::toGlm(handPoses[hand].Position);
+		//ovrVector3f handPosition = handPoses[hand].Position;
+		//return glm::vec3(handPosition.x, handPosition.y, handPosition.z);
 	}
 	glm::vec3 getHandPositionChange(unsigned int hand) {
-		ovrVector3f currHandPosition = handPoses[hand].Position;
-		ovrVector3f lastHandPosition = lastHandPoses[hand].Position;
+		return ovr::toGlm(handPoses[hand].Position) - ovr::toGlm(lastHandPoses[hand].Position);
+
+		//ovrVector3f currHandPosition = handPoses[hand].Position;
+		//ovrVector3f lastHandPosition = lastHandPoses[hand].Position;
 	
-		return glm::vec3(currHandPosition.x, currHandPosition.y, currHandPosition.z)
-			- glm::vec3(lastHandPosition.x, lastHandPosition.y, lastHandPosition.z);
+		//return glm::vec3(currHandPosition.x, currHandPosition.y, currHandPosition.z)
+		//	- glm::vec3(lastHandPosition.x, lastHandPosition.y, lastHandPosition.z);
 	}
 	// relative hand rotation from last to current rotations
 	glm::quat getHandRotationChange(unsigned int hand) {
-		ovrQuatf currHandRotation = handPoses[hand].Orientation;
-		ovrQuatf lastHandRotation = lastHandPoses[hand].Orientation;
-		glm::quat currHandQuat = glm::quat(currHandRotation.w, currHandRotation.x, currHandRotation.y, currHandRotation.z);
-		glm::quat lastHandQuat = glm::quat(lastHandRotation.w, lastHandRotation.x, lastHandRotation.y, lastHandRotation.z);
+		//ovrQuatf currHandRotation = handPoses[hand].Orientation;
+		//ovrQuatf lastHandRotation = lastHandPoses[hand].Orientation;
+		//glm::quat currHandQuat = glm::quat(currHandRotation.w, currHandRotation.x, currHandRotation.y, currHandRotation.z);
+		//glm::quat lastHandQuat = glm::quat(lastHandRotation.w, lastHandRotation.x, lastHandRotation.y, lastHandRotation.z);
 
-		return glm::inverse(lastHandQuat) * currHandQuat;
+		glm::quat currHandQuat = ovr::toGlm(handPoses[hand].Orientation);
+		glm::quat lastHandQuat = ovr::toGlm(lastHandPoses[hand].Orientation);
+
+		//return glm::inverse(lastHandQuat) * currHandQuat;
+		return currHandQuat * glm::inverse(lastHandQuat);
 	}
 
 	// button handlers

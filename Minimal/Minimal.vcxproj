@@ -133,6 +133,7 @@
     <ClCompile Include="ControllerHandler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="SphereScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AvatarFragmentShader.glsl" />
@@ -150,11 +151,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AvatarHandler.h" />
     <ClInclude Include="ControllerHandler.h" />
+    <ClInclude Include="Core.h" />
+    <ClInclude Include="GlfwApp.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="oglShaderAttributes.h" />
+    <ClInclude Include="OvrHelper.h" />
+    <ClInclude Include="RiftApp.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SphereScene.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
