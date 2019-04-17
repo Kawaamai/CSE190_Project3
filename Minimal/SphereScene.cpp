@@ -1,7 +1,5 @@
 #include "SphereScene.h"
 
-
-
 SphereScene::SphereScene() : sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.07, 18, 12)) {
 	using namespace oglplus;
 	try {
@@ -169,7 +167,7 @@ void SphereScene::chooseNewHighlightSphere()
 
 void SphereScene::render(const mat4 & projection, const mat4 & view) {
 	using namespace oglplus;
-	updatePosition();
+	//updatePosition();
 	prog.Use();
 	Uniform<mat4>(prog, "ProjectionMatrix").Set(projection);
 	Uniform<mat4>(prog, "CameraMatrix").Set(view);
@@ -178,9 +176,9 @@ void SphereScene::render(const mat4 & projection, const mat4 & view) {
 		Uniform<vec3>(prog, "lightColor").Set(sceneLight.lightColor);
 	}
 	//Uniform<mat4>(prog, "MModelMatrix").Set((100.0f * translation) * orientation);
-	//Uniform<mat4>(prog, "ModelMatrix").Set(mat4(1.0f));
+	Uniform<mat4>(prog, "ModelMatrix").Set(toWorld);
 	vao.Bind();
-
+	
 	sphere.Draw(instanceCount);
 }
 
@@ -188,7 +186,7 @@ void SphereScene::resetPositions() {
 	//translation = glm::mat4(1.0f);
 	//orientation = glm::mat4(1.0f);
 	toWorld = glm::mat4(1.0f);
-	instance_positions = base_instance_positions;
+	//instance_positions = base_instance_positions;
 	updatePosition();
 }
 

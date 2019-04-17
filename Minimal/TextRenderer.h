@@ -26,7 +26,8 @@ private:
 	Shader textShader = Shader("textShader.vert", "textShader.frag");
 	GLuint VAO, VBO;
 
-	void loadAciiChars() {
+	inline void loadAciiChars() {
+		textShader.use();
 		// disable bye-alignment restriction
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -53,10 +54,10 @@ private:
 			);
 
 			// Set texture options
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -77,29 +78,94 @@ public:
 		if (FT_Init_FreeType(&ft))
 			FAIL("ERROR::FREETYPE: Could not init FreeType Library");
 		// load the font as a face
-		if (FT_New_Face(ft, fontpath.c_str(), 0, &face))
+		//if (FT_New_Face(ft, fontpath.c_str(), 0, &face))
+		//	FAIL("ERROR::FREETYPE: Failed to load font");
+		if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
 			FAIL("ERROR::FREETYPE: Failed to load font");
 
-		// set font size
-		// width = 0 to dynamically calculate the width based on the given height
+		//// set font size
+		//// width = 0 to dynamically calculate the width based on the given height
+		//FT_Set_Pixel_Sizes(face, 0, fontSize);
+
+		//loadAciiChars();
+
+		//// clean up
+		//FT_Done_Face(face);
+		//FT_Done_FreeType(ft);
+
+		//// init VAO, VBO
+		//glGenVertexArrays(1, &VAO);
+		//glGenBuffers(1, &VBO);
+		//glBindVertexArray(VAO);
+		//glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		//// 2D quads require 6 vertices of 4 floats each
+		//// updating VBO's memory quite often, allocate the memory with GL_DYNAMIC_DRAW
+		//glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+		//glEnableVertexAttribArray(0);
+		//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+		//glBindBuffer(GL_ARRAY_BUFFER, 0);
+		//glBindVertexArray(0);
+
+		// Set size to load glyphs as
+		textShader.use();
 		FT_Set_Pixel_Sizes(face, 0, fontSize);
 
-		loadAciiChars();
+		// Disable byte-alignment restriction
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		// clean up
+		// Load first 128 characters of ASCII set
+		for (GLubyte c = 0; c < 128; c++)
+		{
+			// Load character glyph 
+			if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+			{
+				std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+				continue;
+			}
+			// Generate texture
+			GLuint texture;
+			glGenTextures(1, &texture);
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexImage2D(
+				GL_TEXTURE_2D,
+				0,
+				GL_RED,
+				face->glyph->bitmap.width,
+				face->glyph->bitmap.rows,
+				0,
+				GL_RED,
+				GL_UNSIGNED_BYTE,
+				face->glyph->bitmap.buffer
+			);
+			// Set texture options
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			// Now store character for later use
+			Character character = {
+				texture,
+				glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+				glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+				face->glyph->advance.x
+			};
+			characters.insert(std::pair<GLchar, Character>(c, character));
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+		glBindTexture(GL_TEXTURE_2D, 0);
+		// Destroy FreeType once we're finished
 		FT_Done_Face(face);
 		FT_Done_FreeType(ft);
 
-		// init VAO, VBO
+
+		// Configure VAO/VBO for texture quads
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		// 2D quads require 6 vertices of 4 floats each
-		// updating VBO's memory quite often, allocate the memory with GL_DYNAMIC_DRAW
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
@@ -112,47 +178,52 @@ public:
 		GLfloat scale,
 		glm::vec3 color
 	) {
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		 // Activate corresponding render state	
 		textShader.use();
 		textShader.setMat4("projection", proj);
 		textShader.setVec3("textColor", color);
-
 		glActiveTexture(GL_TEXTURE0);
 		glBindVertexArray(VAO);
 
-		// iterate through all chars
-		for (char c : text) {
-			Character ch = characters[c];
+		// Iterate through all characters
+		std::string::const_iterator c;
+		for (c = text.begin(); c != text.end(); c++)
+		{
+			Character ch = characters[*c];
 
 			GLfloat xpos = x + ch.bearing.x * scale;
 			GLfloat ypos = y - (ch.size.y - ch.bearing.y) * scale;
 
 			GLfloat w = ch.size.x * scale;
 			GLfloat h = ch.size.y * scale;
-
-			// update VBO for each char
+			// Update VBO for each character
 			GLfloat vertices[6][4] = {
-				// position.x, position.y, textCoords.x, textCoords.y
-				{ xpos,     ypos + h,	0.0f, 0.0f },
-				{ xpos,     ypos,   	0.0f, 1.0f },
-				{ xpos + w, ypos,    	1.0f, 1.0f },
+				{ xpos,     ypos + h,   0.0, 0.0 },
+				{ xpos,     ypos,       0.0, 1.0 },
+				{ xpos + w, ypos,       1.0, 1.0 },
 
-				{ xpos,     ypos + h,	0.0f, 0.0f },
-				{ xpos + w, ypos,    	1.0f, 1.0f },
-				{ xpos + w, ypos + h,	1.0f, 0.0f }
+				{ xpos,     ypos + h,   0.0, 0.0 },
+				{ xpos + w, ypos,       1.0, 1.0 },
+				{ xpos + w, ypos + h,   1.0, 0.0 }
 			};
-
-			// render glyph texture over quad
+			// Render glyph texture over quad
 			glBindTexture(GL_TEXTURE_2D, ch.textureID);
-			// update contents of VBO memory
+			// Update content of VBO memory
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // Be sure to use glBufferSubData and not glBufferData
+
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			// render quad
+			// Render quad
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-			x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixes (2^6 = 64)
+			// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+			x += (ch.advance >> 6) * scale; // Bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
 		}
 
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
 		glBindVertexArray(0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}

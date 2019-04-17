@@ -50,8 +50,8 @@ public:
 	//std::string modelPath = "sphere2.obj";
 	const char *vertexShader = "oglBasicColor.vert";
 	const char *fragShader = "oglBasicColor.frag";
-	const char *lightVertexShader = "lightColor.vert";
-	const char *lightFragShader = "lightColor.frag";
+	const char *lightVertexShader = "lightedColor.vert";
+	const char *lightFragShader = "lightedColor.frag";
 	oglplus::shapes::ShapeWrapper sphere;
 	const double baseDetectionRadius = 0.01;
 	oglplus::Program prog;

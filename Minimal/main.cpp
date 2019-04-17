@@ -330,8 +330,8 @@ class ExampleApp : public RiftApp {
 
 	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
 
-	TextRenderer scoreText = TextRenderer("fonts/arial.ttf");
-
+	//TextRenderer scoreText = TextRenderer("fonts/arial.ttf");
+	std::unique_ptr<TextRenderer> scoreText;
 public:
 	ExampleApp() :
 		gameStarted(false), correctClicks(0), totalClicks(0), grabbing(false)
@@ -349,6 +349,7 @@ protected:
 		// Note: to disable lighting, don't pass in sceneLight
 		sphereScene = std::make_unique<SphereScene>(sceneLight);
 		controllers = std::make_unique<ControllerHandler>(_session, sceneLight);
+		scoreText = std::make_unique<TextRenderer>("fonts/arial.ttf", 100);
 		//av = std::make_unique<AvatarHandler>(_session);
 	}
 
@@ -365,7 +366,7 @@ protected:
 			// TODO: show game overlay
 		}
 
-		//scoreText.renderText(projection, "asdfasdfasdfasdf", 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f));
+		scoreText->renderText(projection * glm::inverse(headPose), "a", 0.0f, 0.0f, .005f, glm::vec3(0.5f, 0.8f, 0.2f));
 
 		if (gameStarted && checkEndGameState()) {
 			endGame();
@@ -399,7 +400,7 @@ private:
 				//controllers->getHandPosition(ovrHand_Right),
 				controllers->getPointerPosition(),
 				glm::vec3(
-					sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
+					sphereScene->toWorld * sphereScene->instance_positions[sphereScene->highlightedSphere] * glm::vec4(0, 0, 0, 1.0f)
 				)
 			);
 
@@ -434,7 +435,7 @@ private:
 				//std::cerr << handToSphereGridDist << std::endl;
 
 				if (controllers->l_HandTriggerDown() &&
-					handToSphereGridDist < 0.6f) { // rough sphere around the grid
+					handToSphereGridDist < 1.3f) { // rough sphere around the grid
 					grabbing = true;
 
 					grabOffset = glm::vec3(sphereScene->toWorld * glm::vec4(0, 0, 0, 1))

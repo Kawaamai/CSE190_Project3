@@ -1,17 +1,17 @@
 #version 410 core
 
-uniform vec4 Color = vec4(.4);
 uniform vec3 lightPos = vec3(1);
 uniform vec3 lightColor = vec3(1);
 //uniform vec3 viewPos TODO: add in view pos
 
 in vec3 fragNormal;
 in vec3 fragPos;
+in vec4 color;
 out vec4 fragColor;
 
 void main(void) {
 	// ambient
-	float ambientStrength = 0.1;
+	float ambientStrength = 0.3;
 	vec3 ambient = ambientStrength * lightColor;
 
 	// diffuse
@@ -28,7 +28,7 @@ void main(void) {
 //    vec3 specular = specularStrength * spec * lightColor;  
 //        
 //    vec3 result = (ambient + diffuse + specular) * objectColor;
-    vec3 result = (ambient + diffuse) * vec3(Color);
+    vec3 result = (ambient + diffuse) * vec3(color);
     fragColor = vec4(result, 1.0);
     //fragColor = Color;
 }
