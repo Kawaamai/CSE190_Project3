@@ -72,6 +72,12 @@
     <None Include="lightedColor.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="textShader.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="textShader.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -111,6 +117,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lighting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

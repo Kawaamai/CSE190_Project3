@@ -9,5 +9,9 @@ struct Lighting {
 		lightPos = pos;
 		lightColor = color;
 	}
+	Lighting() {
+		lightPos = glm::vec3();
+		lightColor = glm::vec3(1.0f);
+	}
 };
 

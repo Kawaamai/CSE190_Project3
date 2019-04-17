@@ -5,7 +5,7 @@ ControllerHandler::ControllerHandler(const ovrSession & s) :
 	_session(s),
 	instanceCount(0),
 	sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(0.01, 18, 12)),
-	lighting(false);
+	lighting(false)
 {
 	using namespace oglplus;
 	try {

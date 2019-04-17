@@ -69,7 +69,7 @@ public:
 	//Shader shader = Shader("basicVertex.vs", "basicFragment.fs");
 	const glm::vec3 scale = glm::vec3(0.05f);
 
-	const float handOffset = 0.1;
+	const float handOffset = 0.1f;
 
 	//lighting
 	Lighting sceneLight;

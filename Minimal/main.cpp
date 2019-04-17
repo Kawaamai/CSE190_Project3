@@ -304,6 +304,7 @@ void glDebugCallbackHandler(GLenum source, GLenum type, GLuint id, GLenum severi
 
 #include "AvatarHandler.h"
 #include "Lighting.h"
+#include "TextRenderer.h"
 
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp {
@@ -327,7 +328,9 @@ class ExampleApp : public RiftApp {
 	bool grabbing;
 	glm::vec3 grabOffset;
 
-	Lighting sceneLight(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
+	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
+
+	TextRenderer scoreText = TextRenderer("fonts/arial.ttf");
 
 public:
 	ExampleApp() :
@@ -361,6 +364,8 @@ protected:
 			sphereScene->render(projection, glm::inverse(headPose));
 			// TODO: show game overlay
 		}
+
+		//scoreText.renderText(projection, "asdfasdfasdfasdf", 25.0f, 25.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f));
 
 		if (gameStarted && checkEndGameState()) {
 			endGame();

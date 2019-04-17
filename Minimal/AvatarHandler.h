@@ -706,6 +706,7 @@ private:
 		for (uint32_t i = 0; i < componentCount; ++i)
 		{
 			const ovrAvatarComponent* component = ovrAvatarComponent_Get(avatar, i);
+			std::cerr << component->name << std::endl;
 
 			const bool useCombinedMeshProgram = _combineMeshes && bodyComponent == component;
 
