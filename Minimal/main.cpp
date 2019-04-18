@@ -330,8 +330,8 @@ class ExampleApp : public RiftApp {
 
 	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
 
-	//TextRenderer scoreText = TextRenderer("fonts/arial.ttf");
-	std::unique_ptr<TextRenderer> scoreText;
+	//TextRenderer uiFont = TextRenderer("fonts/arial.ttf");
+	std::unique_ptr<TextRenderer> uiFont;
 public:
 	ExampleApp() :
 		gameStarted(false), correctClicks(0), totalClicks(0), grabbing(false)
@@ -344,12 +344,10 @@ protected:
 		glClearColor(0.9f, 0.9f, 0.9f, 0.0f); // background color
 		glEnable(GL_DEPTH_TEST);
 		ovr_RecenterTrackingOrigin(_session);
-		//sphereScene = std::shared_ptr<OglSphereScene>(new OglSphereScene());
-		//controllers = std::shared_ptr<ControllerHandler>(new ControllerHandler(_session));
 		// Note: to disable lighting, don't pass in sceneLight
 		sphereScene = std::make_unique<SphereScene>(sceneLight);
 		controllers = std::make_unique<ControllerHandler>(_session, sceneLight);
-		scoreText = std::make_unique<TextRenderer>("fonts/arial.ttf", 100);
+		uiFont = std::make_unique<TextRenderer>("fonts/arial.ttf", 24);
 		//av = std::make_unique<AvatarHandler>(_session);
 	}
 
@@ -357,6 +355,7 @@ protected:
 		sphereScene.reset();
 	}
 
+	// score shown on hand
 	void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) override {
 		controllers->updateHandState();
 		handleInteractions();
@@ -366,28 +365,66 @@ protected:
 			// TODO: show game overlay
 		}
 
-		scoreText->renderText(projection * glm::inverse(headPose), "a", 0.0f, 0.0f, .005f, glm::vec3(0.5f, 0.8f, 0.2f));
+		std::string scoreDisplayText = "Score: " + std::to_string(correctClicks);
+		std::string gameStartText;
+		if (gameStarted)
+			gameStartText = "Time Left: " + std::to_string(maxGameTime - std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime).count());
+		else
+			gameStartText = "Right index trigger to start";
+
+		// right hand
+		//glm::mat4 handPosTrans = glm::translate(controllers->getHandPosition(ovrHand_Right));
+		//glm::mat4 handRotTrans = glm::mat4_cast(controllers->getHandRotation(ovrHand_Right));
+		////                                                                                        (right of hand, above hand, behind hand)
+		//glm::mat4 gameStartTextTransform = handPosTrans * (handRotTrans * glm::translate(glm::vec3(-0.03f, 0.02f, -0.07f))) * glm::rotate(glm::radians(90.0f), glm::vec3(0, -1, 0));
+		////                                                                                    (right of hand, above hand, behind hand)
+		//glm::mat4 scoreTextTransform = handPosTrans * (handRotTrans * glm::translate(glm::vec3(-0.03f, 0.0f, -0.07f))) * glm::rotate(glm::radians(90.0f), glm::vec3(0, -1, 0));
+		//uiFont->renderText(projection * glm::inverse(headPose) * gameStartTextTransform, gameStartText, glm::vec3(0.0f), .001f, glm::vec3(0.5f, 0.8f, 0.2f));
+		//uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, scoreDisplayText, glm::vec3(0.0f), .001f, glm::vec3(0.5f, 0.8f, 0.2f));
+
+		// left hand
+		if (controllers->gethandStatus(ovrHand_Left)) {
+			glm::mat4 handPosTrans = glm::translate(controllers->getHandPosition(ovrHand_Left));
+			glm::mat4 handRotTrans = glm::mat4_cast(controllers->getHandRotation(ovrHand_Left));
+			//                                                                                        (right of hand, above hand, behind hand)
+			glm::mat4 gameStartTextTransform = handPosTrans * (handRotTrans * glm::translate(glm::vec3(0.03f, 0.015f, 0.1f))) * glm::rotate(glm::radians(70.0f), glm::vec3(0, 1, 0));
+			//                                                                                    (right of hand, above hand, behind hand)
+			glm::mat4 scoreTextTransform = handPosTrans * (handRotTrans * glm::translate(glm::vec3(0.03f, -0.005f, 0.1f))) * glm::rotate(glm::radians(70.0f), glm::vec3(0, 1, 0));
+			uiFont->renderText(projection * glm::inverse(headPose) * gameStartTextTransform, gameStartText, glm::vec3(0.0f), .001f, glm::vec3(1.0f, 0.2f, 0.2f));
+			uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, scoreDisplayText, glm::vec3(0.0f), .001f, glm::vec3(1.0f, 0.2f, 0.2f));
+		}
 
 		if (gameStarted && checkEndGameState()) {
 			endGame();
 		}
 	}
 
-	//void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) override {
-	//	controllers->updateHandState();
-	//	handleInteractions();
-	//	controllers->renderHands(projection, glm::inverse(headPose));
-	//	if (gameStarted) {
-	//		sphereScene->render(projection, glm::inverse(headPose));
-	//		// TODO: show game overlay
-	//	}
+	// score like a hud
+	void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) override {
+		controllers->updateHandState();
+		handleInteractions();
+		controllers->renderHands(projection, glm::inverse(headPose));
+		if (gameStarted) {
+			sphereScene->render(projection, glm::inverse(headPose));
+			// TODO: show game overlay
+		}
 
-	//	//av->updateAvatar(projection, headPose, headPos);
+		// clear depth bit for rendering hud
+		glClear(GL_DEPTH_BUFFER_BIT);
 
-	//	if (gameStarted && checkEndGameState()) {
-	//		endGame();
-	//	}
-	//}
+		std::string scoreDisplayText = "Score: " + std::to_string(correctClicks);
+		glm::vec3 camPos = ovr::toGlm(camera.Position);
+		glm::mat4 camOrientation = glm::mat4_cast(ovr::toGlm(camera.Orientation));
+		glm::mat4 scoreTextTransform = (camOrientation * glm::translate(glm::vec3(0, 0, -6.0f))) * glm::translate(camPos);
+		uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, scoreDisplayText, glm::vec3(-1.0f, -1.0f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
+		std::string gameStartText = gameStarted ? "Game Playing" : "Game not started";
+		uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, gameStartText, glm::vec3(-1.0f, 0.5f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
+
+		if (gameStarted && checkEndGameState()) {
+			endGame();
+		}
+	}
+
 
 private:
 

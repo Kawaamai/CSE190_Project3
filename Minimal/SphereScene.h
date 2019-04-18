@@ -12,7 +12,7 @@ public:
 
 	// Program
 	oglplus::shapes::ShapeWrapper sphere;
-	const double sphereRadius = .07;
+	const double sphereRadius = .05;
 	oglplus::Program prog;
 	oglplus::VertexArray vao;
 	GLuint instanceCount;
@@ -29,7 +29,8 @@ public:
 	// VBOs for the cube's vertices and normals
 
 	const unsigned int GRID_SIZE{ 5 };
-	const float gridSizeScale = 0.14f;
+	//const float gridSizeScale = 0.14f;
+	const float gridSizeScale = 0.12f;
 	//glm::mat4 orientation = glm::mat4(1.0f);
 	//glm::mat4 translation = glm::mat4(1.0f);
 	glm::mat4 toWorld = glm::mat4(1.0f);

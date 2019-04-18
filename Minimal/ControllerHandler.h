@@ -82,6 +82,10 @@ public:
 	void renderHands(const glm::mat4 & projection, const glm::mat4 & modelview);
 	void updateHandState();
 
+	unsigned int gethandStatus(unsigned int hand) {
+		return handStatus[hand];
+	}
+
 	glm::vec3 getPointerPosition() {
 		glm::mat4 offset
 			= glm::translate(glm::mat4(), glm::vec3(glm::mat4_cast(ovr::toGlm(handPoses[ovrHand_Right].Orientation)) * glm::vec4(0, 0, -handOffset, 1)));
@@ -91,25 +95,15 @@ public:
 	// hand positions
 	glm::vec3 getHandPosition(unsigned int hand) {
 		return ovr::toGlm(handPoses[hand].Position);
-		//ovrVector3f handPosition = handPoses[hand].Position;
-		//return glm::vec3(handPosition.x, handPosition.y, handPosition.z);
 	}
 	glm::vec3 getHandPositionChange(unsigned int hand) {
 		return ovr::toGlm(handPoses[hand].Position) - ovr::toGlm(lastHandPoses[hand].Position);
-
-		//ovrVector3f currHandPosition = handPoses[hand].Position;
-		//ovrVector3f lastHandPosition = lastHandPoses[hand].Position;
-	
-		//return glm::vec3(currHandPosition.x, currHandPosition.y, currHandPosition.z)
-		//	- glm::vec3(lastHandPosition.x, lastHandPosition.y, lastHandPosition.z);
+	}
+	glm::quat getHandRotation(unsigned int hand) {
+		return ovr::toGlm(handPoses[hand].Orientation);
 	}
 	// relative hand rotation from last to current rotations
 	glm::quat getHandRotationChange(unsigned int hand) {
-		//ovrQuatf currHandRotation = handPoses[hand].Orientation;
-		//ovrQuatf lastHandRotation = lastHandPoses[hand].Orientation;
-		//glm::quat currHandQuat = glm::quat(currHandRotation.w, currHandRotation.x, currHandRotation.y, currHandRotation.z);
-		//glm::quat lastHandQuat = glm::quat(lastHandRotation.w, lastHandRotation.x, lastHandRotation.y, lastHandRotation.z);
-
 		glm::quat currHandQuat = ovr::toGlm(handPoses[hand].Orientation);
 		glm::quat lastHandQuat = ovr::toGlm(lastHandPoses[hand].Orientation);
 

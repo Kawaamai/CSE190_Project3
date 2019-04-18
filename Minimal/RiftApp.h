@@ -171,18 +171,21 @@ protected:
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
-			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // without avatar
-			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), ovr::toGlm(eyePoses[eye].Position)); // with avatar
+			// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
+			// render hands first?
+			{
+				ovrVector3f eyePosition = eyePoses[eye].Position;
+				ovrQuatf eyeOrientation = eyePoses[eye].Orientation;
+				glm::quat glmOrientation = ovr::toGlm(eyeOrientation);
+				glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
+				glm::vec3 eyeForward = glmOrientation * glm::vec3(0, 0, -1);
+				glm::vec3 eyeUp = glmOrientation * glm::vec3(0, 1, 0);
+				glm::mat4 view = glm::lookAt(eyeWorld, eyeWorld + eyeForward, eyeUp);
+				av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
+			}
 
-			// avatar stuff
-			ovrVector3f eyePosition = eyePoses[eye].Position;
-			ovrQuatf eyeOrientation = eyePoses[eye].Orientation;
-			glm::quat glmOrientation = ovr::toGlm(eyeOrientation);
-			glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
-			glm::vec3 eyeForward = glmOrientation * glm::vec3(0, 0, -1);
-			glm::vec3 eyeUp = glmOrientation * glm::vec3(0, 1, 0);
-			glm::mat4 view = glm::lookAt(eyeWorld, eyeWorld + eyeForward, eyeUp);
-			av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
+			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
+			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
 		});
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -199,5 +202,6 @@ protected:
 	}
 
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) = 0;
+	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) = 0;
 };

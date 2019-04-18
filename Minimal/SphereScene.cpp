@@ -1,6 +1,7 @@
 #include "SphereScene.h"
 
-SphereScene::SphereScene() : sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.07, 18, 12)) {
+// not this one. no lighting
+SphereScene::SphereScene() : sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.05, 18, 12)) {
 	using namespace oglplus;
 	try {
 		// attach the shaders to the program
@@ -71,7 +72,7 @@ SphereScene::SphereScene() : sphere({ "Position", "Normal" }, oglplus::shapes::S
 	}
 }
 
-SphereScene::SphereScene(Lighting light) :  sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.07, 18, 12)), sceneLight(light), lighting(true) {
+SphereScene::SphereScene(Lighting light) :  sphere({ "Position", "Normal" }, oglplus::shapes::Sphere(.05, 18, 12)), sceneLight(light), lighting(true) {
 	using namespace oglplus;
 	try {
 		// attach the shaders to the program
