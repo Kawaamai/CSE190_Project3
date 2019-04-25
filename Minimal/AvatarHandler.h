@@ -899,10 +899,8 @@ public:
 		// If the avatar is initialized, update it
 		if (_avatar)
 		{
-			//ovrAvatar_SetLeftControllerVisibility(_avatar, controllersVisible);
-			//ovrAvatar_SetRightControllerVisibility(_avatar, controllersVisible);
 			ovrAvatar_SetLeftControllerVisibility(_avatar, false);
-			ovrAvatar_SetRightControllerVisibility(_avatar, controllersVisible);
+			ovrAvatar_SetRightControllerVisibility(_avatar, false);
 
 			// Convert the OVR inputs into Avatar SDK inputs
 			ovrInputState touchState;

@@ -202,6 +202,6 @@ protected:
 	}
 
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) = 0;
-	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
+	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) = 0;
 };

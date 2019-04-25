@@ -27,6 +27,18 @@
     <ClCompile Include="SphereScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BasicShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TexturedCube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -78,6 +90,54 @@
     <None Include="textShader.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shader.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shader.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\back.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\down.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\front.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\left.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\right.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="skybox\up.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\back.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\down.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\front.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\left.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\right.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="cube\up.ppm">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -121,6 +181,27 @@
     </ClInclude>
     <ClInclude Include="TextRenderer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExampleApp.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BasicShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TexturedCube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestCubeScene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestingApp.hpp">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -89,6 +89,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\Include\OVRAvatarSDK;$(SolutionDir)\Include\LibOVR;$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libovravatar.lib;LibOVR.lib;opengl32.lib;glu32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -130,10 +131,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BasicShader.cpp" />
     <ClCompile Include="ControllerHandler.cpp" />
+    <ClCompile Include="Cube.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="SphereScene.cpp" />
+    <ClCompile Include="TexturedCube.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AvatarFragmentShader.glsl" />
@@ -144,6 +149,12 @@
     <None Include="basicColor.vert" />
     <None Include="basicFragment.fs" />
     <None Include="basicVertex.vs" />
+    <None Include="cube\back.ppm" />
+    <None Include="cube\down.ppm" />
+    <None Include="cube\front.ppm" />
+    <None Include="cube\left.ppm" />
+    <None Include="cube\right.ppm" />
+    <None Include="cube\up.ppm" />
     <None Include="defCubeFS.fs" />
     <None Include="defCubeVS.vs" />
     <None Include="lightedColor.frag" />
@@ -151,13 +162,26 @@
     <None Include="oglBasicColor.frag" />
     <None Include="oglBasicColor.vert" />
     <None Include="packages.config" />
+    <None Include="shader.frag" />
+    <None Include="shader.vert" />
+    <None Include="skybox.frag" />
+    <None Include="skybox.vert" />
+    <None Include="skybox\back.ppm" />
+    <None Include="skybox\down.ppm" />
+    <None Include="skybox\front.ppm" />
+    <None Include="skybox\left.ppm" />
+    <None Include="skybox\right.ppm" />
+    <None Include="skybox\up.ppm" />
     <None Include="textShader.frag" />
     <None Include="textShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AvatarHandler.h" />
+    <ClInclude Include="BasicShader.h" />
     <ClInclude Include="ControllerHandler.h" />
     <ClInclude Include="Core.h" />
+    <ClInclude Include="Cube.h" />
+    <ClInclude Include="ExampleApp.hpp" />
     <ClInclude Include="GlfwApp.h" />
     <ClInclude Include="Lighting.h" />
     <ClInclude Include="Mesh.h" />
@@ -165,10 +189,14 @@
     <ClInclude Include="oglShaderAttributes.h" />
     <ClInclude Include="OvrHelper.h" />
     <ClInclude Include="RiftApp.h" />
+    <ClInclude Include="TestCubeScene.hpp" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="SphereScene.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="TestingApp.hpp" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="TexturedCube.h" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\arial.ttf" />
