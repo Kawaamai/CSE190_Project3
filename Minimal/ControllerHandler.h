@@ -183,6 +183,36 @@ public:
 		return currInputState.IndexTrigger[hand] > 0.5f;
 	}
 
+	// thumbstick
+	bool isThumbstickUp(unsigned int hand) {
+		return currInputState.Thumbstick[hand].y > 0.5f;
+	}
+	bool isThumbstickDown(unsigned int hand) {
+		return currInputState.Thumbstick[hand].y < -0.5f;
+	}
+	bool isThumbstickLeft(unsigned int hand) {
+		return currInputState.Thumbstick[hand].x < -0.5f;
+	}
+	bool isThumbstickRight(unsigned int hand) {
+		return currInputState.Thumbstick[hand].x > 0.5f;
+	}
+	bool isThumbstickButtonPressed(unsigned int hand) {
+		if (hand == ovrHand_Left)
+			return ((currInputState.Buttons & ovrButton_LThumb) &&
+				((prevInputState.Buttons & ovrButton_LThumb) == 0));
+		else
+			return ((currInputState.Buttons & ovrButton_RThumb) &&
+				((prevInputState.Buttons & ovrButton_RThumb) == 0));
+	}
+	bool isThumbstickButtonUp(unsigned int hand) {
+		if (hand == ovrHand_Left)
+			return ((prevInputState.Buttons & ovrButton_LThumb) &&
+				((currInputState.Buttons & ovrButton_LThumb) == 0));
+		else
+			return ((prevInputState.Buttons & ovrButton_RThumb) &&
+				((currInputState.Buttons & ovrButton_RThumb) == 0));
+	}
+
 private:
 
 	void updateHands();

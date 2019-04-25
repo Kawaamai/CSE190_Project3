@@ -106,9 +106,7 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 		ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
 		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
 		glm::mat4 transform = glm::translate(glm::mat4(1.0), ovr::toGlm(handPosition));
-		glm::mat4 offset
-			= glm::translate(glm::mat4(), glm::vec3(glm::mat4_cast(ovr::toGlm(handPoses[ovrHand_Right].Orientation)) * glm::vec4(0, 0, -handOffset, 1)));
-		instance_positions.push_back(offset * transform);
+		instance_positions.push_back(transform);
 	}
 
 	// render the hands

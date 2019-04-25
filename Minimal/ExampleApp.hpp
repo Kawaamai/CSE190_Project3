@@ -130,30 +130,30 @@ protected:
 	}
 
 	// score like a hud
-	void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) override {
-		controllers->updateHandState();
-		handleInteractions();
-		controllers->renderHands(projection, glm::inverse(headPose));
-		if (gameStarted) {
-			sphereScene->render(projection, glm::inverse(headPose));
-			// TODO: show game overlay
-		}
+	//void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) override {
+	//	controllers->updateHandState();
+	//	handleInteractions();
+	//	controllers->renderHands(projection, glm::inverse(headPose));
+	//	if (gameStarted) {
+	//		sphereScene->render(projection, glm::inverse(headPose));
+	//		// TODO: show game overlay
+	//	}
 
-		// clear depth bit for rendering hud
-		glClear(GL_DEPTH_BUFFER_BIT);
+	//	// clear depth bit for rendering hud
+	//	glClear(GL_DEPTH_BUFFER_BIT);
 
-		std::string scoreDisplayText = "Score: " + std::to_string(correctClicks);
-		glm::vec3 camPos = ovr::toGlm(camera.Position);
-		glm::mat4 camOrientation = glm::mat4_cast(ovr::toGlm(camera.Orientation));
-		glm::mat4 scoreTextTransform = (camOrientation * glm::translate(glm::vec3(0, 0, -6.0f))) * glm::translate(camPos);
-		uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, scoreDisplayText, glm::vec3(-1.0f, -1.0f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
-		std::string gameStartText = gameStarted ? "Game Playing" : "Game not started";
-		uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, gameStartText, glm::vec3(-1.0f, 0.5f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
+	//	std::string scoreDisplayText = "Score: " + std::to_string(correctClicks);
+	//	glm::vec3 camPos = ovr::toGlm(camera.Position);
+	//	glm::mat4 camOrientation = glm::mat4_cast(ovr::toGlm(camera.Orientation));
+	//	glm::mat4 scoreTextTransform = (camOrientation * glm::translate(glm::vec3(0, 0, -6.0f))) * glm::translate(camPos);
+	//	uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, scoreDisplayText, glm::vec3(-1.0f, -1.0f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
+	//	std::string gameStartText = gameStarted ? "Game Playing" : "Game not started";
+	//	uiFont->renderText(projection * glm::inverse(headPose) * scoreTextTransform, gameStartText, glm::vec3(-1.0f, 0.5f, 0.0f), .005f, glm::vec3(0.5f, 0.8f, 0.2f));
 
-		if (gameStarted && checkEndGameState()) {
-			endGame();
-		}
-	}
+	//	if (gameStarted && checkEndGameState()) {
+	//		endGame();
+	//	}
+	//}
 
 
 private:

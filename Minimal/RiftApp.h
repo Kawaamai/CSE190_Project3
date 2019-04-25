@@ -80,6 +80,17 @@ public:
 	}
 
 protected:
+	enum EYE_RENDER_STATE {
+		BOTH, RIGHT, LEFT, SWITCHED
+	};
+	const std::map<EYE_RENDER_STATE, EYE_RENDER_STATE> eyeRenderMap {
+		{BOTH, RIGHT},
+		{RIGHT, LEFT},
+		{LEFT, SWITCHED},
+		{SWITCHED, BOTH}
+	};
+	EYE_RENDER_STATE curEyeRenderState = BOTH;
+
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
 		return glfw::createWindow(_mirrorSize);
 	}
@@ -166,9 +177,23 @@ protected:
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//update();
+		handleInput();
 		ovr::for_each_eye([&](ovrEyeType eye) {
+			if ((curEyeRenderState == RIGHT && eye == ovrEye_Left) ||
+				(curEyeRenderState == LEFT && eye == ovrEye_Right)) {
+				return;
+			}
+
 			const auto& vp = _sceneLayer.Viewport[eye];
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
+
+			if (curEyeRenderState == SWITCHED) {
+				if (eye == ovrEye_Left)
+					eye = ovrEye_Right;
+				else
+					eye = ovrEye_Left;
+			}
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
 			// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
@@ -184,7 +209,8 @@ protected:
 				av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
 			}
 
-			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
+			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
+			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
 			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
 		});
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
@@ -201,7 +227,10 @@ protected:
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	}
 
+	//void update() {}
+	virtual void handleInput() = 0;
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) = 0;
+	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) = 0;
 };
