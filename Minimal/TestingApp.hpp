@@ -15,6 +15,7 @@ class ExampleApp : public RiftApp
 
 	// lighting for phong shading
 	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
+	
 
 public:
 	ExampleApp()
@@ -66,7 +67,7 @@ protected:
 	void handleInput() override {
 		// cube scaling
 		scene->updateTime();
-		if (controllers->isThumbstickButtonPressed(ovrHand_Left)) {
+		if (controllers->isThumbstickButtonDown(ovrHand_Left)) {
 			std::cerr << "reset cube scale" << std::endl;
 			scene->resetCubeScale();
 		}
@@ -83,6 +84,26 @@ protected:
 		if (controllers->r_AButtonDown()) {
 			std::cerr << "switch render setting" << std::endl;
 			curEyeRenderState = eyeRenderMap.at(curEyeRenderState);
+		}
+
+		// scene change
+		if (controllers->l_XButtonDown()) {
+			std::cerr << "changing scene" << std::endl;
+			scene->curScene = sceneMap.at(scene->curScene);
+		}
+
+		// IPD adjustment
+		if (controllers->isThumbstickButtonDown(ovrHand_Right)) {
+			std::cerr << "reset IPD" << std::endl;
+			resetIPD();
+		}
+		if (controllers->isThumbstickLeft(ovrHand_Right)) {
+			std::cerr << "decrease IPD" << std::endl;
+			decIPD();
+		}
+		if (controllers->isThumbstickRight(ovrHand_Right)) {
+			std::cerr << "increase IPD" << std::endl;
+			incIPD();
 		}
 	}
 };

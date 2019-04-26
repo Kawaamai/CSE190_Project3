@@ -7,6 +7,15 @@
 #include "Skybox.h"
 #include <vector>
 
+static enum SCENE_TYPE {
+	STEREO_CUBE, MONO, STEREO
+};
+static std::map<SCENE_TYPE, SCENE_TYPE> sceneMap{
+	{STEREO_CUBE, MONO},
+	{MONO, STEREO},
+	{STEREO, STEREO_CUBE}
+};
+
 // a class for building and rendering cubes
 class TestCubeScene
 {
@@ -30,6 +39,8 @@ class TestCubeScene
 	float lastTime;
 
 public:
+	SCENE_TYPE curScene = STEREO_CUBE;
+
 	TestCubeScene()
 	{
 		// Create two cube
@@ -54,11 +65,13 @@ public:
 	void render(const glm::mat4& projection, const glm::mat4& view)
 	{
 		// Render two cubes
-		for (unsigned int i = 0; i < instanceCount; i++)
-		{
-			// Scale to 20cm: 200cm * 0.1
-			cube->toWorld = instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
-			cube->draw(shaderID, projection, view);
+		if (curScene == STEREO_CUBE) {
+			for (unsigned int i = 0; i < instanceCount; i++)
+			{
+				// Scale to 20cm: 200cm * 0.1
+				cube->toWorld = instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
+				cube->draw(shaderID, projection, view);
+			}
 		}
 
 		// Render Skybox : remove view translation
@@ -68,15 +81,17 @@ public:
 	void render(const glm::mat4& projection, const glm::mat4& view, ovrEyeType eye)
 	{
 		// Render two cubes
-		for (unsigned int i = 0; i < instanceCount; i++)
-		{
-			// Scale to 20cm: 200cm * 0.1
-			cube->toWorld = instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
-			cube->draw(shaderID, projection, view);
+		if (curScene == STEREO_CUBE) {
+			for (unsigned int i = 0; i < instanceCount; i++)
+			{
+				// Scale to 20cm: 200cm * 0.1
+				cube->toWorld = instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
+				cube->draw(shaderID, projection, view);
+			}
 		}
 
 		// Render Skybox : remove view translation
-		if (eye == ovrEye_Left)
+		if (curScene == MONO || eye == ovrEye_Left)
 			skybox->draw(shaderID, projection, view);
 		else
 			skyboxRight->draw(shaderID, projection, view);

@@ -44,6 +44,12 @@ private:
 	ovrLayerEyeFov _sceneLayer;
 	ovrViewScaleDesc _viewScaleDesc;
 
+	// TODO: delete
+	ovrViewScaleDesc _viewScaleDescBase;
+	const float minIPD = -.1f; // based on right eye
+	const float maxIPD = .3f; // based on right eye
+
+
 	uvec2 _renderTargetSize;
 	uvec2 _mirrorSize;
 
@@ -77,6 +83,11 @@ public:
 		// Make the on screen window 1/4 the resolution of the render target
 		_mirrorSize = _renderTargetSize;
 		_mirrorSize /= 4;
+
+		_viewScaleDescBase = _viewScaleDesc;
+		//_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -.08f;
+		//_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = .08f;
+
 	}
 
 protected:
@@ -180,6 +191,7 @@ protected:
 		//update();
 		handleInput();
 		ovr::for_each_eye([&](ovrEyeType eye) {
+			//std::cerr << eye << "\t" << _viewScaleDesc.HmdToEyePose[eye].Position.x << " " << _viewScaleDesc.HmdToEyePose[eye].Position.y << " " << _viewScaleDesc.HmdToEyePose[eye].Position.z << " " << std::endl;
 			if ((curEyeRenderState == RIGHT && eye == ovrEye_Left) ||
 				(curEyeRenderState == LEFT && eye == ovrEye_Right)) {
 				return;
@@ -225,6 +237,28 @@ protected:
 		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTextureId, 0);
 		glBlitFramebuffer(0, 0, _mirrorSize.x, _mirrorSize.y, 0, _mirrorSize.y, _mirrorSize.x, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	}
+
+	void incIPD() {
+		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x -= .005;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x += .005;
+		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x > maxIPD) {
+			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -maxIPD;
+			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = maxIPD;
+		}
+	}
+
+	void decIPD() {
+		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x += .005;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x -= .005;
+		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x < minIPD) {
+			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -minIPD;
+			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = minIPD;
+		}
+	}
+
+	void resetIPD() {
+		_viewScaleDesc = _viewScaleDescBase;
 	}
 
 	//void update() {}

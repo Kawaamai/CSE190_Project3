@@ -196,7 +196,7 @@ public:
 	bool isThumbstickRight(unsigned int hand) {
 		return currInputState.Thumbstick[hand].x > 0.5f;
 	}
-	bool isThumbstickButtonPressed(unsigned int hand) {
+	bool isThumbstickButtonDown(unsigned int hand) {
 		if (hand == ovrHand_Left)
 			return ((currInputState.Buttons & ovrButton_LThumb) &&
 				((prevInputState.Buttons & ovrButton_LThumb) == 0));
