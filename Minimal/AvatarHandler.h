@@ -564,7 +564,12 @@ private:
 		}
 
 		// Get the GL mesh data for this mesh's asset
+		// this is null for some reason
 		MeshData* data = (MeshData*)_assetMap[mesh->meshAssetID];
+
+		// failsafe in case data isn't load for some reason
+		if (!data)
+			return;
 
 		glUseProgram(shader);
 
@@ -706,7 +711,8 @@ private:
 		for (uint32_t i = 0; i < componentCount; ++i)
 		{
 			const ovrAvatarComponent* component = ovrAvatarComponent_Get(avatar, i);
-			//std::cerr << compon	ent->name << std::endl;
+			//std::cerr << i << std::endl;
+			//std::cerr << component->name << std::endl;
 
 			if (std::strcmp(component->name, "base") == 0) {
 				continue;
@@ -723,6 +729,7 @@ private:
 			{
 				const ovrAvatarRenderPart* renderPart = component->renderParts[j];
 				ovrAvatarRenderPartType type = ovrAvatarRenderPart_GetType(renderPart);
+
 				switch (type)
 				{
 				case ovrAvatarRenderPartType_SkinnedMeshRender:
@@ -826,7 +833,7 @@ private:
 			--_loadingAssets;
 		}
 
-		std::cout << "Loading " << _loadingAssets << " assets...\r\n" << std::endl;
+		std::cout << "done Loading " << _loadingAssets << " assets...\r\n" << std::endl;
 	}
 
 
@@ -934,7 +941,6 @@ public:
 			// Render the avatar
 			_renderAvatar(_avatar, ovrAvatarVisibilityFlag_FirstPerson, view, proj, eyePos, renderJoints);
 		}
-
 	}
 
 	void avatar_shutdown() {

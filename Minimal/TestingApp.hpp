@@ -15,7 +15,6 @@ class ExampleApp : public RiftApp
 
 	// lighting for phong shading
 	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
-	
 
 public:
 	ExampleApp()
@@ -49,6 +48,7 @@ protected:
 		//update();
 		//handleInput();
 		scene->render(projection, glm::inverse(headPose), eye);
+		controllers->renderHands(projection, glm::inverse(headPose));
 	}
 
 	void update() override {
@@ -104,6 +104,22 @@ protected:
 		if (controllers->isThumbstickRight(ovrHand_Right)) {
 			std::cerr << "increase IPD" << std::endl;
 			incIPD();
+		}
+
+		// lag
+		if (controllers->r_IndexTriggerDown()) {
+			incLag();
+		}
+		if (controllers->l_IndexTriggerDown()) {
+			decLag();
+		}
+
+		// delay
+		if (controllers->r_HandTriggerDown()) {
+			incDelay();
+		}
+		if (controllers->l_HandTriggerDown()) {
+			decDelay();
 		}
 	}
 };

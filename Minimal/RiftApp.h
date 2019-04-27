@@ -1,9 +1,12 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
+#include <array>
 #include "Core.h"
 #include "GlfwApp.h"
 #include "AvatarHandler.h"
+
 
 class RiftManagerApp {
 protected:
@@ -48,6 +51,26 @@ private:
 	ovrViewScaleDesc _viewScaleDescBase;
 	const float minIPD = -.1f; // based on right eye
 	const float maxIPD = .3f; // based on right eye
+	//std::vector<ovrPosef[2]> headBuffer;
+	std::array<std::array<ovrPosef,2>, 30> headBuffer;
+	int headPointer = 0;
+	int lag = 0;
+	int delay = 0;
+	int currentDelay = 0;
+
+	template <typename T, size_t SIZE>
+	static int incRingHead(std::array<T, SIZE> & v, int head) {
+		if (head < 0)
+			head = head + (int) v.size();
+		return (head + 1) % v.size();
+	}
+
+	template <typename T, size_t SIZE>
+	static T& ringIdx(std::array<T, SIZE> & v, int idx) {
+		if (idx < 0)
+			idx = idx + (int) v.size();
+		return  v.at(idx % v.size());
+	}
 
 
 	uvec2 _renderTargetSize;
@@ -87,15 +110,15 @@ public:
 		_viewScaleDescBase = _viewScaleDesc;
 		//_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -.08f;
 		//_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = .08f;
-
 	}
 
 protected:
 	enum EYE_RENDER_STATE {
-		BOTH, RIGHT, LEFT, SWITCHED
+		BOTH, MONO, RIGHT, LEFT, SWITCHED
 	};
 	const std::map<EYE_RENDER_STATE, EYE_RENDER_STATE> eyeRenderMap {
-		{BOTH, RIGHT},
+		{BOTH, MONO},
+		{MONO, RIGHT},
 		{RIGHT, LEFT},
 		{LEFT, SWITCHED},
 		{SWITCHED, BOTH}
@@ -177,61 +200,96 @@ protected:
 		GlfwApp::onKey(key, scancode, action, mods);
 	}
 
+	int curIndex;
+	GLuint curTexId;
+	GLuint mirrorTextureId;
 	void draw() final override {
-		ovrPosef eyePoses[2];
+		ovrPosef eyePoses[2], beyePoses[2];
 		ovr_GetEyePoses(_session, frame, true, _viewScaleDesc.HmdToEyePose, eyePoses, &_sceneLayer.SensorSampleTime);
+		beyePoses[0] = eyePoses[0];
+		beyePoses[1] = eyePoses[1];
 
-		int curIndex;
+		handleInput();
+
+		// copy into buffer
+		// TODO: determine if copy wants the address for the 3rd argument
+		// TODO: do we need to also delay the controllers?
+		std::copy(eyePoses, eyePoses + 2, ringIdx(headBuffer, headPointer).begin());
+		std::cerr << "Tracking lag: " << lag << " frames" << std::endl;
+		std::cerr << "Rendering delay: " << delay << " frames" << std::endl;
+		std::copy(ringIdx(headBuffer, headPointer - lag).begin(), ringIdx(headBuffer, headPointer - lag).end(), eyePoses);
+		headPointer = incRingHead(headBuffer, headPointer);
+
+		bool render = true;
+		if (delay) {
+			if (currentDelay < delay) {
+				render = false;
+				currentDelay++;
+			}
+			else {
+				currentDelay = 0;
+			}
+		}
+		else if (currentDelay != 0) {
+			currentDelay = 0;
+		}
+
+		//int curIndex;
 		ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
-		GLuint curTexId;
+		//GLuint curTexId;
 		ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//update();
-		handleInput();
-		ovr::for_each_eye([&](ovrEyeType eye) {
-			//std::cerr << eye << "\t" << _viewScaleDesc.HmdToEyePose[eye].Position.x << " " << _viewScaleDesc.HmdToEyePose[eye].Position.y << " " << _viewScaleDesc.HmdToEyePose[eye].Position.z << " " << std::endl;
-			if ((curEyeRenderState == RIGHT && eye == ovrEye_Left) ||
-				(curEyeRenderState == LEFT && eye == ovrEye_Right)) {
-				return;
-			}
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			const auto& vp = _sceneLayer.Viewport[eye];
-			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
+		if (render) {
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			ovr::for_each_eye([&](ovrEyeType eye) {
+				if ((curEyeRenderState == RIGHT && eye == ovrEye_Left) ||
+					(curEyeRenderState == LEFT && eye == ovrEye_Right)) {
+					return;
+				}
 
-			if (curEyeRenderState == SWITCHED) {
-				if (eye == ovrEye_Left)
-					eye = ovrEye_Right;
-				else
+				const auto& vp = _sceneLayer.Viewport[eye];
+				glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
+
+				if (curEyeRenderState == SWITCHED) {
+					if (eye == ovrEye_Left)
+						eye = ovrEye_Right;
+					else
+						eye = ovrEye_Left;
+				}
+				else if (curEyeRenderState == MONO && eye == ovrEye_Right) {
 					eye = ovrEye_Left;
-			}
-			_sceneLayer.RenderPose[eye] = eyePoses[eye];
+				}
+				//_sceneLayer.RenderPose[eye] = eyePoses[eye];
+				_sceneLayer.RenderPose[eye] = beyePoses[eye];
 
-			// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
-			// render hands first?
-			{
-				ovrVector3f eyePosition = eyePoses[eye].Position;
-				ovrQuatf eyeOrientation = eyePoses[eye].Orientation;
-				glm::quat glmOrientation = ovr::toGlm(eyeOrientation);
-				glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
-				glm::vec3 eyeForward = glmOrientation * glm::vec3(0, 0, -1);
-				glm::vec3 eyeUp = glmOrientation * glm::vec3(0, 1, 0);
-				glm::mat4 view = glm::lookAt(eyeWorld, eyeWorld + eyeForward, eyeUp);
-				av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
-			}
+				// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
+				// render hands first?
+				{
+					ovrVector3f eyePosition = eyePoses[eye].Position;
+					ovrQuatf eyeOrientation = eyePoses[eye].Orientation;
+					glm::quat glmOrientation = ovr::toGlm(eyeOrientation);
+					glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
+					glm::vec3 eyeForward = glmOrientation * glm::vec3(0, 0, -1);
+					glm::vec3 eyeUp = glmOrientation * glm::vec3(0, 1, 0);
+					glm::mat4 view = glm::lookAt(eyeWorld, eyeWorld + eyeForward, eyeUp);
+					av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
+				}
 
-			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
-			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
-			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
-		});
+				//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
+				renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
+				//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
+			});
+		}
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		ovr_CommitTextureSwapChain(_session, _eyeTexture);
 		ovrLayerHeader* headerList = &_sceneLayer.Header;
 		ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
 
-		GLuint mirrorTextureId;
+		//GLuint mirrorTextureId;
 		ovr_GetMirrorTextureBufferGL(_session, _mirrorTexture, &mirrorTextureId);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, _mirrorFbo);
 		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTextureId, 0);
@@ -240,8 +298,8 @@ protected:
 	}
 
 	void incIPD() {
-		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x -= .005;
-		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x += .005;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x -= .005f;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x += .005f;
 		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x > maxIPD) {
 			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -maxIPD;
 			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = maxIPD;
@@ -249,8 +307,8 @@ protected:
 	}
 
 	void decIPD() {
-		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x += .005;
-		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x -= .005;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x += .005f;
+		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x -= .005f;
 		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x < minIPD) {
 			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -minIPD;
 			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = minIPD;
@@ -259,6 +317,36 @@ protected:
 
 	void resetIPD() {
 		_viewScaleDesc = _viewScaleDescBase;
+	}
+
+	void incLag() {
+		lag++;
+	}
+
+	void decLag() {
+		lag--;
+		if (lag < 0)
+			lag = 0;
+	}
+
+	void resetLag() {
+		lag = 0;
+	}
+
+	int getlag() {
+		return lag;
+	}
+
+	void incDelay() {
+		delay++;
+		if (delay > 10)
+			delay = 10;
+	}
+
+	void decDelay() {
+		delay--;
+		if (delay < 0)
+			delay = 0;
 	}
 
 	//void update() {}

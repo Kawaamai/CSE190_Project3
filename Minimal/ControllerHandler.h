@@ -75,6 +75,22 @@ public:
 	Lighting sceneLight;
 	bool lighting = false;
 
+	// smoothing
+	std::vector<glm::vec3> posBuffer[2];
+	int bufferIdx = 0;
+	int smoothing = 1;
+	const int maxSmoothing = 45;
+
+	template <typename T>
+	static int incRingIdx(std::vector<T> & v, int head) {
+		return (head + 1) % v.size();
+	}
+
+	template <typename T>
+	static T& ringAt(std::vector<T> & v, int idx) {
+		return  v.at(idx % v.size());
+	}
+
 	ControllerHandler(const ovrSession & s);
 	ControllerHandler(const ovrSession & s, Lighting light);
 	~ControllerHandler();
@@ -94,16 +110,24 @@ public:
 
 	// hand positions
 	glm::vec3 getHandPosition(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return glm::vec3();
 		return ovr::toGlm(handPoses[hand].Position);
 	}
 	glm::vec3 getHandPositionChange(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return glm::vec3();
 		return ovr::toGlm(handPoses[hand].Position) - ovr::toGlm(lastHandPoses[hand].Position);
 	}
 	glm::quat getHandRotation(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return glm::quat();
 		return ovr::toGlm(handPoses[hand].Orientation);
 	}
 	// relative hand rotation from last to current rotations
 	glm::quat getHandRotationChange(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return glm::quat();
 		glm::quat currHandQuat = ovr::toGlm(handPoses[hand].Orientation);
 		glm::quat lastHandQuat = ovr::toGlm(lastHandPoses[hand].Orientation);
 
@@ -113,90 +137,136 @@ public:
 
 	// button handlers
 	bool r_HandTriggerDown() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((currInputState.HandTrigger[ovrHand_Right] > 0.5f) &&
 			(prevInputState.HandTrigger[ovrHand_Right] < 0.5f));
 	}
 	bool l_HandTriggerDown() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((currInputState.HandTrigger[ovrHand_Left] > 0.5f) &&
 			(prevInputState.HandTrigger[ovrHand_Left] < 0.5f));
 	}
 	bool r_IndexTriggerDown() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((currInputState.IndexTrigger[ovrHand_Right] > 0.5f) &&
 			(prevInputState.IndexTrigger[ovrHand_Right] < 0.5f));
 	}
 	bool l_IndexTriggerDown() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((currInputState.IndexTrigger[ovrHand_Left] > 0.5f) &&
 			(prevInputState.IndexTrigger[ovrHand_Left] < 0.5f));
 	}
 	bool r_AButtonDown() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((currInputState.Buttons & ovrButton_A) &&
 			((prevInputState.Buttons & ovrButton_A) == 0));
 	}
 	bool r_BButtonDown() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((currInputState.Buttons & ovrButton_B) &&
 			((prevInputState.Buttons & ovrButton_B) == 0));
 	}
 	bool l_XButtonDown() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((currInputState.Buttons & ovrButton_X) &&
 			((prevInputState.Buttons & ovrButton_X) == 0));
 	}
 	bool l_YButtonDown() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((currInputState.Buttons & ovrButton_Y) &&
 			((prevInputState.Buttons & ovrButton_Y) == 0));
 	}
 	bool r_HandTriggerUp() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((prevInputState.HandTrigger[ovrHand_Right] > 0.5f) &&
 			(currInputState.HandTrigger[ovrHand_Right] < 0.5f));
 	}
 	bool l_HandTriggerUp() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((prevInputState.HandTrigger[ovrHand_Left] > 0.5f) &&
 			(currInputState.HandTrigger[ovrHand_Left] < 0.5f));
 	}
 	bool r_IndexTriggerUp() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((prevInputState.IndexTrigger[ovrHand_Right] > 0.5f) &&
 			(currInputState.IndexTrigger[ovrHand_Right] < 0.5f));
 	}
 	bool l_IndexTriggerUp() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((prevInputState.IndexTrigger[ovrHand_Left] > 0.5f) &&
 			(currInputState.IndexTrigger[ovrHand_Left] < 0.5f));
 	}
 	bool r_AButtonUp() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((prevInputState.Buttons & ovrButton_A) &&
 			((currInputState.Buttons & ovrButton_A) == 0));
 	}
 	bool r_BButtonUp() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
 		return ((prevInputState.Buttons & ovrButton_B) &&
 			((currInputState.Buttons & ovrButton_B) == 0));
 	}
 	bool l_XButtonUp() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((prevInputState.Buttons & ovrButton_X) &&
 			((currInputState.Buttons & ovrButton_X) == 0));
 	}
 	bool l_YButtonUp() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
 		return ((prevInputState.Buttons & ovrButton_Y) &&
 			((currInputState.Buttons & ovrButton_Y) == 0));
 	}
 	bool isHandTriggerPressed(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.HandTrigger[hand] > 0.5f;
 	}
 	bool isIndexTriggerPressed(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.IndexTrigger[hand] > 0.5f;
 	}
 
 	// thumbstick
 	bool isThumbstickUp(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.Thumbstick[hand].y > 0.5f;
 	}
 	bool isThumbstickDown(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.Thumbstick[hand].y < -0.5f;
 	}
 	bool isThumbstickLeft(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.Thumbstick[hand].x < -0.5f;
 	}
 	bool isThumbstickRight(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		return currInputState.Thumbstick[hand].x > 0.5f;
 	}
 	bool isThumbstickButtonDown(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		if (hand == ovrHand_Left)
 			return ((currInputState.Buttons & ovrButton_LThumb) &&
 				((prevInputState.Buttons & ovrButton_LThumb) == 0));
@@ -205,6 +275,8 @@ public:
 				((prevInputState.Buttons & ovrButton_RThumb) == 0));
 	}
 	bool isThumbstickButtonUp(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
 		if (hand == ovrHand_Left)
 			return ((prevInputState.Buttons & ovrButton_LThumb) &&
 				((currInputState.Buttons & ovrButton_LThumb) == 0));
@@ -212,6 +284,8 @@ public:
 			return ((prevInputState.Buttons & ovrButton_RThumb) &&
 				((currInputState.Buttons & ovrButton_RThumb) == 0));
 	}
+
+	glm::vec3 calcSmoothPos(unsigned int hand);
 
 private:
 

@@ -7,13 +7,13 @@
 #include "Skybox.h"
 #include <vector>
 
-static enum SCENE_TYPE {
+enum SCENE_TYPE {
 	STEREO_CUBE, MONO, STEREO
 };
 static std::map<SCENE_TYPE, SCENE_TYPE> sceneMap{
-	{STEREO_CUBE, MONO},
-	{MONO, STEREO},
-	{STEREO, STEREO_CUBE}
+	{STEREO_CUBE, STEREO},
+	{STEREO, MONO},
+	{MONO, STEREO_CUBE}
 };
 
 // a class for building and rendering cubes
