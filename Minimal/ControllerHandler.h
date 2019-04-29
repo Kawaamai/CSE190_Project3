@@ -75,21 +75,7 @@ public:
 	Lighting sceneLight;
 	bool lighting = false;
 
-	// smoothing
-	std::vector<glm::vec3> posBuffer[2];
-	int bufferIdx = 0;
-	int smoothing = 1;
-	const int maxSmoothing = 45;
-
-	template <typename T>
-	static int incRingIdx(std::vector<T> & v, int head) {
-		return (head + 1) % v.size();
-	}
-
-	template <typename T>
-	static T& ringAt(std::vector<T> & v, int idx) {
-		return  v.at(idx % v.size());
-	}
+	// smoothing and lag
 
 	ControllerHandler(const ovrSession & s);
 	ControllerHandler(const ovrSession & s, Lighting light);
@@ -285,7 +271,7 @@ public:
 				((currInputState.Buttons & ovrButton_RThumb) == 0));
 	}
 
-	glm::vec3 calcSmoothPos(unsigned int hand);
+	//glm::vec3 calcSmoothPos(unsigned int hand);
 
 private:
 

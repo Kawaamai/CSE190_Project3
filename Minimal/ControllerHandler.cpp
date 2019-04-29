@@ -80,10 +80,6 @@ ControllerHandler::ControllerHandler(const ovrSession & s, Lighting light) :
 	instance_attr.Pointer(4, DataType::Float, false, stride, (void*)0);
 	instance_attr.Divisor(1);
 	instance_attr.Enable();
-
-	// TODO: determine if i want resize or reserve
-	posBuffer[ovrHand_Left].reserve(45);
-	posBuffer[ovrHand_Right].reserve(45);
 }
 
 
@@ -207,17 +203,17 @@ void ControllerHandler::buttonHandler()
 	}
 }
 
-glm::vec3 ControllerHandler::calcSmoothPos(unsigned int hand) {
-	if (smoothing == 1)
-		return posBuffer[hand][bufferIdx];
-
-	glm::vec3 total;
-	for (int i = 0; i < smoothing; i++) {
-		total += ringAt(posBuffer[hand], bufferIdx + i);
-	}
-
-	return total / (float) smoothing;
-}
+//glm::vec3 ControllerHandler::calcSmoothPos(unsigned int hand) {
+//	if (smoothing == 1)
+//		return posBuffer[hand][bufferIdx];
+//
+//	glm::vec3 total;
+//	for (int i = 0; i < smoothing; i++) {
+//		total += ringAt(posBuffer[hand], bufferIdx + i);
+//	}
+//
+//	return total / (float) smoothing;
+//}
 
 //void ControllerHandler::renderHand(
 //	const glm::mat4 & projection,

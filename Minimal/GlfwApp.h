@@ -62,6 +62,7 @@ public:
 			glfwPollEvents();
 			update();
 			draw();
+			lateUpdate();
 			finishFrame();
 		}
 
@@ -139,6 +140,8 @@ protected:
 	}
 
 	virtual void update() {}
+
+	virtual void lateUpdate() {}
 
 	virtual void onMouseButton(int button, int action, int mods) {}
 

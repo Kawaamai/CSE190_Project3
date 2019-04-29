@@ -6,6 +6,7 @@
 #include "ControllerHandler.h"
 #include "TestCubeScene.hpp"
 #include "Lighting.h"
+#include "RingBuffer.h"
 
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp
@@ -25,7 +26,6 @@ protected:
 	void initGl() override
 	{
 		RiftApp::initGl();
-		//glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 		setBlackScreen();
 		glEnable(GL_DEPTH_TEST);
 		ovr_RecenterTrackingOrigin(_session);
@@ -43,12 +43,12 @@ protected:
 		scene->render(projection, glm::inverse(headPose));
 	}
 
+	// note: glm::inverse(headPose) is the camera matrix
 	void renderScene(const glm::mat4& projection, const glm::mat4& headPose, ovrEyeType eye) override
 	{
-		//update();
-		//handleInput();
 		scene->render(projection, glm::inverse(headPose), eye);
 		controllers->renderHands(projection, glm::inverse(headPose));
+
 	}
 
 	void update() override {
