@@ -129,5 +129,10 @@ protected:
 		if (controllers->l_HandTriggerDown()) {
 			decDelay();
 		}
+
+		// super rotation or smoothing
+		if (controllers->l_YButtonDown()) {
+
+		}
 	}
 };

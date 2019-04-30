@@ -246,6 +246,8 @@ protected:
 				const auto& vp = _sceneLayer.Viewport[eye];
 				glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
+				_sceneLayer.RenderPose[eye] = eyePoses[eye]; // do before switch.
+
 				if (curEyeRenderState == SWITCHED) {
 					if (eye == ovrEye_Left)
 						eye = ovrEye_Right;
@@ -255,7 +257,6 @@ protected:
 				else if (curEyeRenderState == MONO && eye == ovrEye_Right) {
 					eye = ovrEye_Left;
 				}
-				_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
 				// replace with saved
 				if (currentTrackingMode == ORIENTATION)
@@ -263,8 +264,7 @@ protected:
 				if (currentTrackingMode == POSITION)
 					eyePoses[eye].Position = savedTranslation[eye];
 
-				// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
-				// render hands first?
+				// hand avatar rendering
 				{
 					ovrVector3f eyePosition = eyePoses[eye].Position;
 					glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
@@ -298,17 +298,6 @@ protected:
 			ovr::for_each_eye([&](ovrEyeType eye) {
 				_sceneLayer.RenderPose[eye] = eyePoses[eye];
 			});
-			//int curIndex;
-			//ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
-			//GLuint curTexId;
-			//ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
-			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
-			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			// drawing would usually go here
-			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			//ovr_CommitTextureSwapChain(_session, _eyeTexture);
 			ovrLayerHeader* headerList = &_sceneLayer.Header;
 			ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
 		}
