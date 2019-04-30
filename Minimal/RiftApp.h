@@ -55,7 +55,7 @@ private:
 
 	// head tracking lag
 	// this will run into problems later when when doing the mono and other stuff
-	std::array<std::array<glm::mat4,2>, 30> lagBuffer;
+	std::array<std::array<glm::mat4, 2>, 30> lagBuffer;
 	int lagIdx = 0;
 	int lag = 0;
 	int delay = 0;

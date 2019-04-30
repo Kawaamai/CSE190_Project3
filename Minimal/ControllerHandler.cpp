@@ -92,20 +92,32 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 	std::vector<glm::mat4> instance_positions;
 	// update
 	//updateHands();
+	getRingAt(smoothingBuffer, smoothingIdx)[ovrHand_Left] = ovr::toGlm(handPoses[ovrHand_Left].Position);
+	getRingAt(smoothingBuffer, smoothingIdx)[ovrHand_Right] = ovr::toGlm(handPoses[ovrHand_Right].Position);
 
 	// render hands
 	if (handStatus[ovrHand_Left]) {
 		//renderHand(projection, modelview, handPoses[0].Position);
-		ovrVector3f handPosition = handPoses[ovrHand_Left].Position;
+		glm::vec3 handPosition;
+		//ovrVector3f handPosition = handPoses[ovrHand_Left].Position;
+		if (!smoothing)
+			handPosition = ovr::toGlm(handPoses[ovrHand_Left].Position);
+		else
+			handPosition = calcSmoothPos(ovrHand_Left);
+		std::cerr << handPosition.x << " " << handPosition.y << " " << handPosition.z << std::endl;
 		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
-		glm::mat4 transform = glm::translate(glm::mat4(1.0), ovr::toGlm(handPosition));
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), handPosition);
 		instance_positions.push_back(transform);
 	}
 	if (handStatus[ovrHand_Right]) {
-		//renderHand(projection, modelview, handPoses[1].Position);
-		ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
+		glm::vec3 handPosition;
+		//ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
+		if (!smoothing)
+			handPosition = ovr::toGlm(handPoses[ovrHand_Right].Position);
+		else
+			handPosition = calcSmoothPos(ovrHand_Right);
 		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
-		glm::mat4 transform = glm::translate(glm::mat4(1.0), ovr::toGlm(handPosition));
+		glm::mat4 transform = glm::translate(glm::mat4(1.0), handPosition);
 		instance_positions.push_back(transform);
 	}
 
@@ -139,6 +151,7 @@ void ControllerHandler::updateHandState()
 {
 	updateHands();
 	buttonHandler();
+	smoothingIdx++;
 }
 
 // Important: make sure this is only called one time each frame
@@ -203,17 +216,17 @@ void ControllerHandler::buttonHandler()
 	}
 }
 
-//glm::vec3 ControllerHandler::calcSmoothPos(unsigned int hand) {
-//	if (smoothing == 1)
-//		return posBuffer[hand][bufferIdx];
-//
-//	glm::vec3 total;
-//	for (int i = 0; i < smoothing; i++) {
-//		total += ringAt(posBuffer[hand], bufferIdx + i);
-//	}
-//
-//	return total / (float) smoothing;
-//}
+glm::vec3 ControllerHandler::calcSmoothPos(unsigned int hand) {
+	if (smoothing == 1)
+		return getRingAt(smoothingBuffer, smoothingIdx)[hand];
+
+	glm::vec3 total;
+	for (int i = 0; i < smoothing; i++) {
+		total += getRingAt(smoothingBuffer, smoothingIdx + i)[hand];
+	}
+
+	return total / (float) smoothing;
+}
 
 //void ControllerHandler::renderHand(
 //	const glm::mat4 & projection,

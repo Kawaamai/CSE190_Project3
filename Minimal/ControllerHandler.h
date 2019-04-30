@@ -26,6 +26,7 @@
 
 #include "OvrHelper.h"
 #include "Lighting.h"
+#include "RingBuffer.h"
 
 class ControllerHandler
 {
@@ -76,6 +77,9 @@ public:
 	bool lighting = false;
 
 	// smoothing and lag
+	std::array<std::array<glm::vec3, 2>, 30> smoothingBuffer;
+	int smoothingIdx = 0;
+	int smoothing = 0;
 
 	ControllerHandler(const ovrSession & s);
 	ControllerHandler(const ovrSession & s, Lighting light);
@@ -271,7 +275,7 @@ public:
 				((currInputState.Buttons & ovrButton_RThumb) == 0));
 	}
 
-	//glm::vec3 calcSmoothPos(unsigned int hand);
+	glm::vec3 calcSmoothPos(unsigned int hand);
 
 private:
 

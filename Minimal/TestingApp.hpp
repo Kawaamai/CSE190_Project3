@@ -132,7 +132,7 @@ protected:
 
 		// super rotation or smoothing
 		if (controllers->l_YButtonDown()) {
-
+			controllers->smoothing = (controllers->smoothing + 2) % 10;
 		}
 	}
 };
