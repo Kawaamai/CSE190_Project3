@@ -268,21 +268,36 @@ protected:
 			ovr_CommitTextureSwapChain(_session, _eyeTexture);
 			ovrLayerHeader* headerList = &_sceneLayer.Header;
 			ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
-
-			GLuint mirrorTextureId;
-			ovr_GetMirrorTextureBufferGL(_session, _mirrorTexture, &mirrorTextureId);
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, _mirrorFbo);
-			glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTextureId, 0);
-			glBlitFramebuffer(0, 0, _mirrorSize.x, _mirrorSize.y, 0, _mirrorSize.y, _mirrorSize.x, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 		}
 		else {
 			ovr::for_each_eye([&](ovrEyeType eye) {
 				_sceneLayer.RenderPose[eye] = eyePoses[eye];
 			});
+			//int curIndex;
+			//ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
+			//GLuint curTexId;
+			//ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
+			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
+			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// drawing would usually go here
+			//glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+			//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			//ovr_CommitTextureSwapChain(_session, _eyeTexture);
+			ovrLayerHeader* headerList = &_sceneLayer.Header;
+			ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
 		}
+
+		// mirrors oculus frame buffer to debug screen frame buffer
+		GLuint mirrorTextureId;
+		ovr_GetMirrorTextureBufferGL(_session, _mirrorTexture, &mirrorTextureId);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, _mirrorFbo);
+		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTextureId, 0);
+		glBlitFramebuffer(0, 0, _mirrorSize.x, _mirrorSize.y, 0, _mirrorSize.y, _mirrorSize.x, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
 		std::cerr << "Tracking Lag: " << lag << " frames" << std::endl;
-		std::cerr << "Rendering delay: " << delay << " frames" << std::endl;
+		std::cerr << "Rendering delay: " << (delay + 1) << " frames" << std::endl;
 	}
 
 	void lateUpdate() override {
@@ -335,12 +350,13 @@ protected:
 
 	void incDelay() {
 		delay++;
-		currentDelay = delay;
 		if (delay > 10)
-			delay = 10;
+			delay = 90;
 	}
 
 	void decDelay() {
+		if (delay == 90)
+			delay = 10;
 		delay--;
 		if (delay < 0) {
 			delay = 0;
