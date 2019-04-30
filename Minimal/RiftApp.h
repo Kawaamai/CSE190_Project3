@@ -53,13 +53,6 @@ private:
 	const float minIPD = -.1f / 2; // based on right eye
 	const float maxIPD = .3f / 2; // based on right eye
 
-	// head tracking lag
-	// this will run into problems later when when doing the mono and other stuff
-	std::array<std::array<glm::mat4, 2>, 30> lagBuffer;
-	int lagIdx = 0;
-	int lag = 0;
-	int delay = 0;
-	int currentDelay = 0;
 
 	uvec2 _renderTargetSize;
 	uvec2 _mirrorSize;
@@ -124,11 +117,20 @@ protected:
 	std::array<ovrQuatf, 2> savedOrientation;
 	std::array<ovrVector3f, 2> savedTranslation;
 
+	// head tracking lag
+	// this will run into problems later when when doing the mono and other stuff
+	std::array<std::array<glm::mat4, 2>, 30> lagBuffer;
+	int lagIdx = 0;
+	int lag = 0;
+	int delay = 0;
+	int currentDelay = 0;
+
+	//------------ functions
+	
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
 		return glfw::createWindow(_mirrorSize);
 	}
 
-	//------------ functions
 
 	void initGl() override {
 		GlfwApp::initGl();

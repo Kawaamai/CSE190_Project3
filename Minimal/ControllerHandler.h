@@ -80,6 +80,7 @@ public:
 	std::array<std::array<glm::vec3, 2>, 30> smoothingBuffer;
 	int smoothingIdx = 0;
 	int smoothing = 0;
+	int lag = 0;
 
 	ControllerHandler(const ovrSession & s);
 	ControllerHandler(const ovrSession & s, Lighting light);

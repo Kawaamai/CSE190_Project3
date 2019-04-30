@@ -125,9 +125,11 @@ protected:
 		// delay
 		if (controllers->r_HandTriggerDown()) {
 			incDelay();
+			controllers->lag = lag;
 		}
 		if (controllers->l_HandTriggerDown()) {
 			decDelay();
+			controllers->lag = lag;
 		}
 
 		// super rotation or smoothing
