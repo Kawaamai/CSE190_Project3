@@ -99,6 +99,7 @@ public:
 	}
 
 protected:
+	//----------- variables
 	enum EYE_RENDER_STATE {
 		BOTH, MONO, RIGHT, LEFT, SWITCHED
 	};
@@ -111,9 +112,23 @@ protected:
 	};
 	EYE_RENDER_STATE curEyeRenderState = BOTH;
 
+	enum TRACKING_MODE {
+		NORMAL, POSITION, ORIENTATION
+	};
+
+	std::map<TRACKING_MODE, TRACKING_MODE> trackingModeMap{
+		{NORMAL, POSITION}, {POSITION, ORIENTATION}, {ORIENTATION, NORMAL}
+	};
+
+	TRACKING_MODE currentTrackingMode = NORMAL;
+	std::array<ovrQuatf, 2> savedOrientation;
+	std::array<ovrVector3f, 2> savedTranslation;
+
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
 		return glfw::createWindow(_mirrorSize);
 	}
+
+	//------------ functions
 
 	void initGl() override {
 		GlfwApp::initGl();
@@ -187,13 +202,19 @@ protected:
 	}
 
 	void draw() final override {
-		ovrPosef eyePoses[2], beyePoses[2];
+		ovrPosef eyePoses[2];
 		ovr_GetEyePoses(_session, frame, true, _viewScaleDesc.HmdToEyePose, eyePoses, &_sceneLayer.SensorSampleTime);
 
 		handleInput();
 
 		ovr::for_each_eye([&](ovrEyeType eye) {
 			saveCameraBuffer(ovr::toGlm(eyePoses[eye]), eye);
+
+			// save if neccessary
+			if (currentTrackingMode != ORIENTATION)
+				savedOrientation[eye] = eyePoses[eye].Orientation;
+			if (currentTrackingMode != POSITION)
+				savedTranslation[eye] = eyePoses[eye].Position;
 		});
 
 		bool render = true;
@@ -206,8 +227,6 @@ protected:
 				currentDelay = 0;
 			}
 		}
-
-		std::cerr << render << std::endl;
 
 		if (render) {
 			int curIndex;
@@ -237,6 +256,12 @@ protected:
 					eye = ovrEye_Left;
 				}
 				_sceneLayer.RenderPose[eye] = eyePoses[eye];
+
+				// replace with saved
+				if (currentTrackingMode == ORIENTATION)
+					eyePoses[eye].Orientation = savedOrientation[eye];
+				if (currentTrackingMode == POSITION)
+					eyePoses[eye].Position = savedTranslation[eye];
 
 				// avatar stuff, don't really want to touch, put in own space to avoid potential conflicts
 				// render hands first?
@@ -351,7 +376,7 @@ protected:
 	void incDelay() {
 		delay++;
 		if (delay > 10)
-			delay = 90;
+			delay = 91;
 	}
 
 	void decDelay() {

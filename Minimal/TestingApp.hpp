@@ -8,6 +8,9 @@
 #include "Lighting.h"
 #include "RingBuffer.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
+
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp
 {
@@ -48,7 +51,6 @@ protected:
 	{
 		scene->render(projection, glm::inverse(headPose), eye);
 		controllers->renderHands(projection, glm::inverse(headPose));
-
 	}
 
 	void update() override {
@@ -90,6 +92,12 @@ protected:
 		if (controllers->l_XButtonDown()) {
 			std::cerr << "changing scene" << std::endl;
 			scene->curScene = sceneMap.at(scene->curScene);
+		}
+
+		// tracking mode change
+		if (controllers->r_BButtonDown()) {
+			std::cerr << "changing tracking mode" << std::endl;
+			currentTrackingMode = trackingModeMap.at(currentTrackingMode);
 		}
 
 		// IPD adjustment
