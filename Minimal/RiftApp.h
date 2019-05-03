@@ -128,7 +128,9 @@ protected:
 
 	// superrotation
 	std::array<glm::quat, 2> lastOrientation;
+	std::array<glm::vec3, 2> lastPosition;
 	std::array<glm::quat, 2> lastSuperOrientation;
+	std::array<glm::vec3, 2> lastSuperPosition;
 	bool superRot = false;
 
 	//------------ functions
@@ -277,28 +279,36 @@ protected:
 				// TODO: modify orientation here
 				// TODO: change this to modify change in rotation rather than absolute rotation
 				// FIXME: head movement and distancing not working correctly
-				superRot = false;
+				//superRot = false;
 				if (superRot) {
 					//glm::vec3 pyr = glm::eulerAngles(ovr::toGlm(eyePoses[eye].Orientation));
-					float yaw = glm::yaw(ovr::toGlm(eyePoses[eye].Orientation));
-					//std::cerr << yaw << std::endl;
-					if (100 * (ovr::toGlm(eyePoses[eye].Orientation) * glm::vec3(0.0f, 0.0f, 10000.0f)).z < 0.0f){
-						// currently swapping
-						if (yaw > 0.0f) {
-							std::cerr << "hit1" << std::endl;
-							yaw = -yaw + glm::pi<float>();
-						}
-						else {
-							std::cerr << "hit2" << std::endl;
-							yaw = -yaw - glm::pi<float>();
-						}
-					}
-					//glm::quat delta = ovr::toGlm(beyePoses[eye].Orientation) * glm::inverse(lastOrientation[eye]);
-					//float yaw = glm::yaw(delta);
+					//float yaw = glm::yaw(ovr::toGlm(eyePoses[eye].Orientation));
+					////std::cerr << yaw << std::endl;
+					//if (100 * (ovr::toGlm(eyePoses[eye].Orientation) * glm::vec3(0.0f, 0.0f, 10000.0f)).z < 0.0f){
+					//	// currently swapping
+					//	if (yaw > 0.0f) {
+					//		std::cerr << "hit1" << std::endl;
+					//		yaw = -yaw + glm::pi<float>();
+					//	}
+					//	else {
+					//		std::cerr << "hit2" << std::endl;
+					//		yaw = -yaw - glm::pi<float>();
+					//	}
+					//}
+
+					// orientation
+					glm::quat delta = ovr::toGlm(beyePoses[eye].Orientation) * glm::inverse(lastOrientation[eye]);
+					glm::quat deltaSuper = lastSuperOrientation[eye] * glm::inverse(lastOrientation[eye]);
+					float yaw = glm::yaw(delta);
 					//std::cerr << "yaw: " << yaw << std::endl;
 					glm::quat extraRot = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
-					ovrQuatf ovr_extraRot = ovr::fromGlm(extraRot * lastSuperOrientation[eye]);
+					ovrQuatf ovr_extraRot = ovr::fromGlm(extraRot * deltaSuper * delta * glm::inverse(deltaSuper) * lastSuperOrientation[eye]);
 					eyePoses[eye].Orientation = ovr_extraRot;
+
+					// position
+					glm::vec3 deltaPos = ovr::toGlm(beyePoses[eye].Position) - lastPosition[eye];
+					//glm::vec3 deltaSuperPos = lastSuperPosition[eye] - lastPosition[eye];
+					eyePoses[eye].Position = ovr::fromGlm((deltaSuper * deltaPos) + lastSuperPosition[eye]);
 				}
 
 				// hand avatar rendering
@@ -353,6 +363,8 @@ protected:
 		ovr::for_each_eye([&](ovrEyeType eye) {
 			lastOrientation[eye] = ovr::toGlm(beyePoses[eye].Orientation);
 			lastSuperOrientation[eye] = ovr::toGlm(eyePoses[eye].Orientation);
+			lastPosition[eye] = ovr::toGlm(beyePoses[eye].Position);
+			lastSuperPosition[eye] = ovr::toGlm(eyePoses[eye].Position);
 		});
 	}
 
