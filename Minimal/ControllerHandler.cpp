@@ -104,7 +104,6 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 			handPosition = ovr::toGlm(handPoses[ovrHand_Left].Position);
 		else
 			handPosition = calcSmoothPos(ovrHand_Left);
-		std::cerr << handPosition.x << " " << handPosition.y << " " << handPosition.z << std::endl;
 		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
 		glm::mat4 transform = glm::translate(glm::mat4(1.0), handPosition);
 		instance_positions.push_back(transform);
@@ -151,7 +150,7 @@ void ControllerHandler::updateHandState()
 {
 	updateHands();
 	buttonHandler();
-	smoothingIdx++;
+	smoothingIdx = incRingIdx(smoothingBuffer, smoothingIdx);
 }
 
 // Important: make sure this is only called one time each frame
@@ -217,12 +216,12 @@ void ControllerHandler::buttonHandler()
 }
 
 glm::vec3 ControllerHandler::calcSmoothPos(unsigned int hand) {
-	if (smoothing == 1)
+	if (smoothing == 0)
 		return getRingAt(smoothingBuffer, smoothingIdx - lag)[hand];
 
 	glm::vec3 total;
 	for (int i = 0; i < smoothing; i++) {
-		total += getRingAt(smoothingBuffer, smoothingIdx + i - lag)[hand];
+		total += getRingAt(smoothingBuffer, smoothingIdx - i - lag)[hand];
 	}
 
 	return total / (float) smoothing;

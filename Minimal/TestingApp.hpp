@@ -117,24 +117,33 @@ protected:
 		// lag
 		if (controllers->r_IndexTriggerDown()) {
 			incLag();
+			controllers->lag = lag;
 		}
 		if (controllers->l_IndexTriggerDown()) {
 			decLag();
+			controllers->lag = lag;
 		}
 
 		// delay
 		if (controllers->r_HandTriggerDown()) {
 			incDelay();
-			controllers->lag = lag;
 		}
 		if (controllers->l_HandTriggerDown()) {
 			decDelay();
-			controllers->lag = lag;
 		}
 
-		// super rotation or smoothing
+		// smoothing
 		if (controllers->l_YButtonDown()) {
-			controllers->smoothing = (controllers->smoothing + 2) % 10;
+			controllers->smoothing = (controllers->smoothing + 5) % 20;
+			std::cerr << controllers->smoothing << std::endl;
+		}
+
+		// super rotation
+		if (controllers->isTouchThumbRestPressed(ovrHand_Left) && controllers->isTouchThumbRestPressed(ovrHand_Right)) {
+			superRot = true;
+		}
+		else {
+			superRot = false;
 		}
 	}
 };

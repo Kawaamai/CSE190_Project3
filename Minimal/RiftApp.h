@@ -7,6 +7,7 @@
 #include "GlfwApp.h"
 #include "AvatarHandler.h"
 #include "RingBuffer.h"
+#include <glm/gtc/constants.hpp>
 
 
 class RiftManagerApp {
@@ -125,6 +126,11 @@ protected:
 	int delay = 0;
 	int currentDelay = 0;
 
+	// superrotation
+	std::array<glm::quat, 2> lastOrientation;
+	std::array<glm::quat, 2> lastSuperOrientation;
+	bool superRot = false;
+
 	//------------ functions
 	
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
@@ -204,8 +210,10 @@ protected:
 	}
 
 	void draw() final override {
-		ovrPosef eyePoses[2];
+		ovrPosef eyePoses[2], beyePoses[2];
 		ovr_GetEyePoses(_session, frame, true, _viewScaleDesc.HmdToEyePose, eyePoses, &_sceneLayer.SensorSampleTime);
+		beyePoses[0] = eyePoses[0];
+		beyePoses[1] = eyePoses[1];
 
 		handleInput();
 
@@ -248,7 +256,7 @@ protected:
 				const auto& vp = _sceneLayer.Viewport[eye];
 				glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
-				_sceneLayer.RenderPose[eye] = eyePoses[eye]; // do before switch.
+				_sceneLayer.RenderPose[eye] = beyePoses[eye]; // do before switch.
 
 				if (curEyeRenderState == SWITCHED) {
 					if (eye == ovrEye_Left)
@@ -265,6 +273,33 @@ protected:
 					eyePoses[eye].Orientation = savedOrientation[eye];
 				if (currentTrackingMode == POSITION)
 					eyePoses[eye].Position = savedTranslation[eye];
+
+				// TODO: modify orientation here
+				// TODO: change this to modify change in rotation rather than absolute rotation
+				// FIXME: head movement and distancing not working correctly
+				superRot = false;
+				if (superRot) {
+					//glm::vec3 pyr = glm::eulerAngles(ovr::toGlm(eyePoses[eye].Orientation));
+					float yaw = glm::yaw(ovr::toGlm(eyePoses[eye].Orientation));
+					//std::cerr << yaw << std::endl;
+					if (100 * (ovr::toGlm(eyePoses[eye].Orientation) * glm::vec3(0.0f, 0.0f, 10000.0f)).z < 0.0f){
+						// currently swapping
+						if (yaw > 0.0f) {
+							std::cerr << "hit1" << std::endl;
+							yaw = -yaw + glm::pi<float>();
+						}
+						else {
+							std::cerr << "hit2" << std::endl;
+							yaw = -yaw - glm::pi<float>();
+						}
+					}
+					//glm::quat delta = ovr::toGlm(beyePoses[eye].Orientation) * glm::inverse(lastOrientation[eye]);
+					//float yaw = glm::yaw(delta);
+					//std::cerr << "yaw: " << yaw << std::endl;
+					glm::quat extraRot = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
+					ovrQuatf ovr_extraRot = ovr::fromGlm(extraRot * lastSuperOrientation[eye]);
+					eyePoses[eye].Orientation = ovr_extraRot;
+				}
 
 				// hand avatar rendering
 				{
@@ -314,6 +349,11 @@ protected:
 
 		std::cerr << "Tracking Lag: " << lag << " frames" << std::endl;
 		std::cerr << "Rendering delay: " << (delay + 1) << " frames" << std::endl;
+
+		ovr::for_each_eye([&](ovrEyeType eye) {
+			lastOrientation[eye] = ovr::toGlm(beyePoses[eye].Orientation);
+			lastSuperOrientation[eye] = ovr::toGlm(eyePoses[eye].Orientation);
+		});
 	}
 
 	void lateUpdate() override {

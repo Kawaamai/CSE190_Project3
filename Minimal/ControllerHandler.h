@@ -276,6 +276,25 @@ public:
 				((currInputState.Buttons & ovrButton_RThumb) == 0));
 	}
 
+	bool isTouchRestDown(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
+		if (hand == ovrHand_Left)
+			return ((currInputState.Touches & ovrTouch_LThumbRest) &&
+				((prevInputState.Touches & ovrTouch_LThumbRest) == 0));
+		else
+			return ((currInputState.Touches & ovrTouch_RThumbRest) &&
+				((prevInputState.Touches & ovrTouch_RThumbRest) == 0));
+	}
+	bool isTouchThumbRestPressed(unsigned int hand) {
+		if (!gethandStatus(hand))
+			return false;
+		if (hand == ovrHand_Left)
+			return currInputState.Touches & ovrTouch_LThumbRest;
+		else
+			return currInputState.Touches & ovrTouch_RThumbRest;
+	}
+
 	glm::vec3 calcSmoothPos(unsigned int hand);
 
 private:
