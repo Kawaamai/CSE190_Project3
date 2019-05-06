@@ -4,7 +4,7 @@
 #include "OvrHelper.h"
 #include "RiftApp.h"
 #include "ControllerHandler.h"
-#include "TestCubeScene.hpp"
+#include "CaveScene.hpp"
 #include "Lighting.h"
 #include "RingBuffer.h"
 
@@ -14,7 +14,7 @@
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp
 {
-	std::shared_ptr<TestCubeScene> scene;
+	std::shared_ptr<CaveScene> scene;
 	std::unique_ptr<ControllerHandler> controllers;
 
 	// lighting for phong shading
@@ -32,7 +32,7 @@ protected:
 		setBlackScreen();
 		glEnable(GL_DEPTH_TEST);
 		ovr_RecenterTrackingOrigin(_session);
-		scene = std::shared_ptr<TestCubeScene>(new TestCubeScene());
+		scene = std::shared_ptr<CaveScene>(new CaveScene());
 		controllers = std::make_unique<ControllerHandler>(_session, sceneLight);
 	}
 
@@ -82,68 +82,23 @@ protected:
 			scene->increaseCubeScale();
 		}
 
-		// target eye rendering
-		if (controllers->r_AButtonDown()) {
-			std::cerr << "switch render setting" << std::endl;
-			curEyeRenderState = eyeRenderMap.at(curEyeRenderState);
-		}
+		if (controllers->r_AButtonDown()) { }
 
-		// scene change
-		if (controllers->l_XButtonDown()) {
-			std::cerr << "changing scene" << std::endl;
-			scene->curScene = sceneMap.at(scene->curScene);
-		}
+		if (controllers->l_XButtonDown()) { }
 
-		// tracking mode change
-		if (controllers->r_BButtonDown()) {
-			std::cerr << "changing tracking mode" << std::endl;
-			currentTrackingMode = trackingModeMap.at(currentTrackingMode);
-		}
+		if (controllers->r_BButtonDown()) { }
 
-		// IPD adjustment
-		if (controllers->isThumbstickButtonDown(ovrHand_Right)) {
-			std::cerr << "reset IPD" << std::endl;
-			resetIPD();
-		}
-		if (controllers->isThumbstickLeft(ovrHand_Right)) {
-			std::cerr << "decrease IPD" << std::endl;
-			decIPD();
-		}
-		if (controllers->isThumbstickRight(ovrHand_Right)) {
-			std::cerr << "increase IPD" << std::endl;
-			incIPD();
-		}
+		if (controllers->isThumbstickButtonDown(ovrHand_Right)) { }
+		if (controllers->isThumbstickLeft(ovrHand_Right)) { }
+		if (controllers->isThumbstickRight(ovrHand_Right)) { }
 
-		// lag
-		if (controllers->r_IndexTriggerDown()) {
-			incLag();
-			controllers->lag = lag;
-		}
-		if (controllers->l_IndexTriggerDown()) {
-			decLag();
-			controllers->lag = lag;
-		}
+		if (controllers->r_IndexTriggerDown()) { }
+		if (controllers->l_IndexTriggerDown()) { }
 
-		// delay
-		if (controllers->r_HandTriggerDown()) {
-			incDelay();
-		}
-		if (controllers->l_HandTriggerDown()) {
-			decDelay();
-		}
+		if (controllers->r_HandTriggerDown()) { }
+		if (controllers->l_HandTriggerDown()) { }
+		if (controllers->l_YButtonDown()) { }
 
-		// smoothing
-		if (controllers->l_YButtonDown()) {
-			controllers->smoothing = (controllers->smoothing + 5) % 20;
-			std::cerr << controllers->smoothing << std::endl;
-		}
-
-		// super rotation
-		if (controllers->isTouchThumbRestPressed(ovrHand_Left) && controllers->isTouchThumbRestPressed(ovrHand_Right)) {
-			superRot = true;
-		}
-		else {
-			superRot = false;
-		}
+		if (controllers->isTouchThumbRestPressed(ovrHand_Left) && controllers->isTouchThumbRestPressed(ovrHand_Right)) { }
 	}
 };

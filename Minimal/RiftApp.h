@@ -49,12 +49,6 @@ private:
 	ovrLayerEyeFov _sceneLayer;
 	ovrViewScaleDesc _viewScaleDesc;
 
-	// TODO: delete
-	ovrViewScaleDesc _viewScaleDescBase;
-	const float minIPD = -.1f / 2; // based on right eye
-	const float maxIPD = .3f / 2; // based on right eye
-
-
 	uvec2 _renderTargetSize;
 	uvec2 _mirrorSize;
 
@@ -88,53 +82,9 @@ public:
 		// Make the on screen window 1/4 the resolution of the render target
 		_mirrorSize = _renderTargetSize;
 		_mirrorSize /= 4;
-
-		_viewScaleDescBase = _viewScaleDesc;
 	}
 
 protected:
-	//----------- variables
-	enum EYE_RENDER_STATE {
-		BOTH, MONO, RIGHT, LEFT, SWITCHED
-	};
-	const std::map<EYE_RENDER_STATE, EYE_RENDER_STATE> eyeRenderMap {
-		{BOTH, MONO},
-		{MONO, RIGHT},
-		{RIGHT, LEFT},
-		{LEFT, SWITCHED},
-		{SWITCHED, BOTH}
-	};
-	EYE_RENDER_STATE curEyeRenderState = BOTH;
-
-	enum TRACKING_MODE {
-		NORMAL, POSITION, ORIENTATION
-	};
-
-	std::map<TRACKING_MODE, TRACKING_MODE> trackingModeMap{
-		{NORMAL, POSITION}, {POSITION, ORIENTATION}, {ORIENTATION, NORMAL}
-	};
-
-	TRACKING_MODE currentTrackingMode = NORMAL;
-	std::array<ovrQuatf, 2> savedOrientation;
-	std::array<ovrVector3f, 2> savedTranslation;
-
-	// head tracking lag
-	// this will run into problems later when when doing the mono and other stuff
-	std::array<std::array<glm::mat4, 2>, 30> lagBuffer;
-	int lagIdx = 0;
-	int lag = 0;
-	int delay = 0;
-	int currentDelay = 0;
-
-	// superrotation
-	std::array<glm::quat, 2> lastOrientation;
-	std::array<glm::vec3, 2> lastPosition;
-	std::array<glm::quat, 2> lastSuperOrientation;
-	std::array<glm::vec3, 2> lastSuperPosition;
-	bool superRot = false;
-
-	//------------ functions
-	
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
 		return glfw::createWindow(_mirrorSize);
 	}
@@ -214,140 +164,41 @@ protected:
 	void draw() final override {
 		ovrPosef eyePoses[2], beyePoses[2];
 		ovr_GetEyePoses(_session, frame, true, _viewScaleDesc.HmdToEyePose, eyePoses, &_sceneLayer.SensorSampleTime);
-		beyePoses[0] = eyePoses[0];
-		beyePoses[1] = eyePoses[1];
 
 		handleInput();
 
+		int curIndex;
+		ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
+		GLuint curTexId;
+		ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		ovr::for_each_eye([&](ovrEyeType eye) {
-			saveCameraBuffer(ovr::toGlm(eyePoses[eye]), eye);
+			const auto& vp = _sceneLayer.Viewport[eye];
+			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
-			// save if neccessary
-			if (currentTrackingMode != ORIENTATION)
-				savedOrientation[eye] = eyePoses[eye].Orientation;
-			if (currentTrackingMode != POSITION)
-				savedTranslation[eye] = eyePoses[eye].Position;
+			_sceneLayer.RenderPose[eye] = beyePoses[eye]; // do before switch.
+
+
+			// hand avatar rendering
+			{
+				ovrVector3f eyePosition = eyePoses[eye].Position;
+				glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
+				glm::mat4 view = glm::inverse(ovr::toGlm(eyePoses[eye]));
+				av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
+			}
+
+			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
+			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
+		//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
 		});
-
-		bool render = true;
-		if (delay) {
-			if (currentDelay < delay) {
-				render = false;
-				currentDelay++;
-			}
-			else {
-				currentDelay = 0;
-			}
-		}
-
-		if (render) {
-			int curIndex;
-			ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
-			GLuint curTexId;
-			ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			ovr::for_each_eye([&](ovrEyeType eye) {
-				if ((curEyeRenderState == RIGHT && eye == ovrEye_Left) ||
-					(curEyeRenderState == LEFT && eye == ovrEye_Right)) {
-					return;
-				}
-
-				const auto& vp = _sceneLayer.Viewport[eye];
-				glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
-
-				_sceneLayer.RenderPose[eye] = beyePoses[eye]; // do before switch.
-
-				if (curEyeRenderState == SWITCHED) {
-					if (eye == ovrEye_Left)
-						eye = ovrEye_Right;
-					else
-						eye = ovrEye_Left;
-				}
-				else if (curEyeRenderState == MONO && eye == ovrEye_Right) {
-					eye = ovrEye_Left;
-				}
-
-				// replace with saved
-				if (currentTrackingMode == ORIENTATION)
-					eyePoses[eye].Orientation = savedOrientation[eye];
-				if (currentTrackingMode == POSITION)
-					eyePoses[eye].Position = savedTranslation[eye];
-
-				// TODO: modify orientation here
-				// TODO: change this to modify change in rotation rather than absolute rotation
-				// FIXME: head movement and distancing not working correctly
-				//superRot = false;
-				if (superRot) {
-					//glm::vec3 pyr = glm::eulerAngles(ovr::toGlm(eyePoses[eye].Orientation));
-					//float yaw = glm::yaw(ovr::toGlm(eyePoses[eye].Orientation));
-					////std::cerr << yaw << std::endl;
-					//if (100 * (ovr::toGlm(eyePoses[eye].Orientation) * glm::vec3(0.0f, 0.0f, 10000.0f)).z < 0.0f){
-					//	// currently swapping
-					//	if (yaw > 0.0f) {
-					//		std::cerr << "hit1" << std::endl;
-					//		yaw = -yaw + glm::pi<float>();
-					//	}
-					//	else {
-					//		std::cerr << "hit2" << std::endl;
-					//		yaw = -yaw - glm::pi<float>();
-					//	}
-					//}
-
-					// orientation
-					glm::quat delta = ovr::toGlm(beyePoses[eye].Orientation) * glm::inverse(lastOrientation[eye]);
-					glm::quat deltaSuper = lastSuperOrientation[eye] * glm::inverse(lastOrientation[eye]);
-					float yaw = glm::yaw(delta);
-					//std::cerr << "yaw: " << yaw << std::endl;
-					glm::quat extraRot = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
-					ovrQuatf ovr_extraRot = ovr::fromGlm(extraRot * deltaSuper * delta * glm::inverse(deltaSuper) * lastSuperOrientation[eye]);
-					eyePoses[eye].Orientation = ovr_extraRot;
-
-					// position
-					glm::vec3 deltaPos = ovr::toGlm(beyePoses[eye].Position) - lastPosition[eye];
-					//glm::vec3 deltaSuperPos = lastSuperPosition[eye] - lastPosition[eye];
-					eyePoses[eye].Position = ovr::fromGlm((deltaSuper * deltaPos) + lastSuperPosition[eye]);
-				}
-
-				// hand avatar rendering
-				{
-					ovrVector3f eyePosition = eyePoses[eye].Position;
-					glm::vec3 eyeWorld = ovr::toGlm(eyePosition);
-					if (!lag) {
-						glm::mat4 view = glm::inverse(ovr::toGlm(eyePoses[eye]));
-						av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
-					}
-					else {
-						glm::mat4 headPose = getRingAt(lagBuffer, lagIdx - lag)[eye];
-						av->updateAvatar(_eyeProjections[eye], glm::inverse(headPose), eyeWorld);
-					}
-				}
-
-				//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
-				if (!lag) {
-					renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
-				}
-				else {
-					glm::mat4 headPose = getRingAt(lagBuffer, lagIdx - lag)[eye];
-					renderScene(_eyeProjections[eye], headPose, eye); // score on hand
-				}
-				//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
-			});
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-			ovr_CommitTextureSwapChain(_session, _eyeTexture);
-			ovrLayerHeader* headerList = &_sceneLayer.Header;
-			ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
-		}
-		else {
-			ovr::for_each_eye([&](ovrEyeType eye) {
-				_sceneLayer.RenderPose[eye] = eyePoses[eye];
-			});
-			ovrLayerHeader* headerList = &_sceneLayer.Header;
-			ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
-		}
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		ovr_CommitTextureSwapChain(_session, _eyeTexture);
+		ovrLayerHeader* headerList = &_sceneLayer.Header;
+		ovr_SubmitFrame(_session, frame, &_viewScaleDesc, &headerList, 1);
 
 		// mirrors oculus frame buffer to debug screen frame buffer
 		GLuint mirrorTextureId;
@@ -356,81 +207,11 @@ protected:
 		glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mirrorTextureId, 0);
 		glBlitFramebuffer(0, 0, _mirrorSize.x, _mirrorSize.y, 0, _mirrorSize.y, _mirrorSize.x, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-		std::cerr << "Tracking Lag: " << lag << " frames" << std::endl;
-		std::cerr << "Rendering delay: " << (delay + 1) << " frames" << std::endl;
-
-		ovr::for_each_eye([&](ovrEyeType eye) {
-			lastOrientation[eye] = ovr::toGlm(beyePoses[eye].Orientation);
-			lastSuperOrientation[eye] = ovr::toGlm(eyePoses[eye].Orientation);
-			lastPosition[eye] = ovr::toGlm(beyePoses[eye].Position);
-			lastSuperPosition[eye] = ovr::toGlm(eyePoses[eye].Position);
-		});
 	}
 
 	void lateUpdate() override {
-		lagIdx = incRingIdx(lagBuffer, lagIdx);
 	}
 
-	void saveCameraBuffer(const glm::mat4& camera, ovrEyeType eye) {
-		getRingAt(lagBuffer, lagIdx)[eye] = camera;
-	}
-
-	void incIPD() {
-		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x -= .005f;
-		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x += .005f;
-		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x > maxIPD) {
-			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -maxIPD;
-			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = maxIPD;
-		}
-	}
-
-	void decIPD() {
-		_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x += .005f;
-		_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x -= .005f;
-		if (_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x < minIPD) {
-			_viewScaleDesc.HmdToEyePose[ovrEye_Left].Position.x = -minIPD;
-			_viewScaleDesc.HmdToEyePose[ovrEye_Right].Position.x = minIPD;
-		}
-	}
-
-	void resetIPD() {
-		_viewScaleDesc = _viewScaleDescBase;
-	}
-
-	void incLag() {
-		lag++;
-	}
-
-	void decLag() {
-		lag--;
-		if (lag < 0)
-			lag = 0;
-	}
-
-	void resetLag() {
-		lag = 0;
-	}
-
-	int getlag() {
-		return lag;
-	}
-
-	void incDelay() {
-		delay++;
-		if (delay > 10)
-			delay = 91;
-	}
-
-	void decDelay() {
-		if (delay == 90)
-			delay = 10;
-		delay--;
-		if (delay < 0) {
-			delay = 0;
-			currentDelay = 0;
-		}
-	}
 
 	//void update() {}
 	virtual void handleInput() = 0;

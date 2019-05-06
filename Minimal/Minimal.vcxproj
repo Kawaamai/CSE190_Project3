@@ -178,6 +178,7 @@
   <ItemGroup>
     <ClInclude Include="AvatarHandler.h" />
     <ClInclude Include="BasicShader.h" />
+    <ClInclude Include="CaveScene.hpp" />
     <ClInclude Include="ControllerHandler.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="Cube.h" />
