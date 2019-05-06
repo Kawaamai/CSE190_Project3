@@ -197,9 +197,6 @@
     <ClInclude Include="TexturedCube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TestCubeScene.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TestingApp.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -209,8 +206,14 @@
     <ClInclude Include="RingBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TestCubeSceneCave.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestCubeScene.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="CaveScene.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

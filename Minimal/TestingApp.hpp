@@ -5,6 +5,7 @@
 #include "RiftApp.h"
 #include "ControllerHandler.h"
 #include "CaveScene.hpp"
+#include "TestCubeSceneCave.hpp"
 #include "Lighting.h"
 #include "RingBuffer.h"
 
@@ -14,7 +15,8 @@
 // An example application that renders a simple cube
 class ExampleApp : public RiftApp
 {
-	std::shared_ptr<CaveScene> scene;
+	std::unique_ptr<CaveScene> scene;
+	std::unique_ptr<TestCubeSceneCave> caveScene;
 	std::unique_ptr<ControllerHandler> controllers;
 
 	// lighting for phong shading
@@ -32,30 +34,40 @@ protected:
 		setBlackScreen();
 		glEnable(GL_DEPTH_TEST);
 		ovr_RecenterTrackingOrigin(_session);
-		scene = std::shared_ptr<CaveScene>(new CaveScene());
+		caveScene = std::make_unique<TestCubeSceneCave>();
 		controllers = std::make_unique<ControllerHandler>(_session, sceneLight);
+		scene = std::make_unique<CaveScene>();
+		// give the scene the function to use to render the cave scene
+		//scene->renderCave = caveScene->render;
 	}
 
 	void shutdownGl() override
 	{
-		scene.reset();
+		caveScene.reset();
 	}
 
 	void renderScene(const glm::mat4& projection, const glm::mat4& headPose) override
 	{
-		scene->render(projection, glm::inverse(headPose));
+		//caveScene->render(projection, glm::inverse(headPose));
 	}
 
 	// note: glm::inverse(headPose) is the camera matrix
 	void renderScene(const glm::mat4& projection, const glm::mat4& headPose, ovrEyeType eye) override
 	{
-		scene->render(projection, glm::inverse(headPose), eye);
+		// TODO: setup offscreen buffers
+		// render screen to off screen buffers (done)
+		//caveScene->render(projection, glm::inverse(headPose), eye);
+		//scene->render(projection, glm::inverse(headPose), eye);
+		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
+			caveScene->render(projection, view, eye);
+		}, projection, glm::inverse(headPose), eye);
+
+		// render cubes with these textures
 		controllers->renderHands(projection, glm::inverse(headPose));
 	}
 
 	void update() override {
 		controllers->updateHandState();
-		//scene->updateTime();
 	}
 
 	void setBlackScreen() {
@@ -68,18 +80,18 @@ protected:
 
 	void handleInput() override {
 		// cube scaling
-		scene->updateTime();
+		caveScene->updateTime();
 		if (controllers->isThumbstickButtonDown(ovrHand_Left)) {
 			std::cerr << "reset cube scale" << std::endl;
-			scene->resetCubeScale();
+			caveScene->resetCubeScale();
 		}
 		if (controllers->isThumbstickLeft(ovrHand_Left)) {
 			std::cerr << "decrease cube scale" << std::endl;
-			scene->decreaseCubeScale();
+			caveScene->decreaseCubeScale();
 		}
 		if (controllers->isThumbstickRight(ovrHand_Left)) {
 			std::cerr << "increase cube scale" << std::endl;
-			scene->increaseCubeScale();
+			caveScene->increaseCubeScale();
 		}
 
 		if (controllers->r_AButtonDown()) { }

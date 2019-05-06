@@ -162,7 +162,7 @@ protected:
 	}
 
 	void draw() final override {
-		ovrPosef eyePoses[2], beyePoses[2];
+		ovrPosef eyePoses[2];
 		ovr_GetEyePoses(_session, frame, true, _viewScaleDesc.HmdToEyePose, eyePoses, &_sceneLayer.SensorSampleTime);
 
 		handleInput();
@@ -179,7 +179,7 @@ protected:
 			const auto& vp = _sceneLayer.Viewport[eye];
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
-			_sceneLayer.RenderPose[eye] = beyePoses[eye]; // do before switch.
+			_sceneLayer.RenderPose[eye] = eyePoses[eye]; // do before switch.
 
 
 			// hand avatar rendering
