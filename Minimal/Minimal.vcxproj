@@ -136,6 +136,7 @@
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Plane.cpp" />
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="SphereScene.cpp" />
     <ClCompile Include="TexturedCube.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="AvatarHandler.h" />
     <ClInclude Include="BasicShader.h" />
     <ClInclude Include="CaveScene.hpp" />
+    <ClInclude Include="Plane.h" />
     <ClInclude Include="TestCubeSceneCave.hpp" />
     <ClInclude Include="ControllerHandler.h" />
     <ClInclude Include="Core.h" />

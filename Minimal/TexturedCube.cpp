@@ -106,7 +106,7 @@ TexturedCube::~TexturedCube()
 	glDeleteTextures(1, &cubeMap);
 }
 
-void TexturedCube::draw(unsigned shader, const glm::mat4& p, const glm::mat4& v)
+void TexturedCube::draw(unsigned int shader, const glm::mat4& p, const glm::mat4& v)
 {
 	glUseProgram(shader);
 	// ... set view and projection matrix

@@ -58,6 +58,7 @@ protected:
 		// render screen to off screen buffers (done)
 		//caveScene->render(projection, glm::inverse(headPose), eye);
 		//scene->render(projection, glm::inverse(headPose), eye);
+		// thank you lambda functions <3
 		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
 			caveScene->render(projection, view, eye);
 		}, projection, glm::inverse(headPose), eye);
