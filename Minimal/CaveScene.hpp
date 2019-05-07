@@ -66,12 +66,6 @@ public:
 				* glm::scale(glm::vec3(2.4f));
 			plane->draw(basicShaderId, projection, view);
 		}
-		//plane->toWorld = glm::translate(glm::vec3(0.0f, 0.0f, -0.5f));
-		//plane->draw(basicShaderId, projection, view);
-		//plane->toWorld = glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -0.5f));
-		//plane->draw(basicShaderId, projection, view);
-		//plane->toWorld = glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -0.5f));
-		//plane->draw(basicShaderId, projection, view);
 
 		if (eye == ovrEye_Left)
 			skybox->draw(shaderId, projection, view);

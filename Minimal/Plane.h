@@ -9,11 +9,13 @@ public:
 	~Plane();
 
 	glm::mat4 toWorld;
+	GLuint textureId;
+	bool textureSet = false;
 
 	void draw(GLuint shaderProgram, const glm::mat4& projection, const glm::mat4& view);
 
 private:
-	GLuint vertexBuffer, normalBuffer, VAO, ebo;
+	GLuint vertexBuffer, normalBuffer, VAO, ebo, texBuffer;
 	GLuint uProjection, uModelview;
 };
 

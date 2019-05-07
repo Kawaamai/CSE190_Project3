@@ -109,8 +109,9 @@ void Plane::draw(GLuint shaderProgram, const glm::mat4 & projection, const glm::
 	glBindVertexArray(VAO);
 
 	// textures
+	//if (textureSet)
 	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, map);
+	//glBindTexture(GL_TEXTURE_2D, textureId);
 	//glUniform1i(glGetUniformLocation(shaderProgram, "skybox"), 0):
 
 	//glDrawArrays(GL_TRIANGLES, 0, 3 * 2 * 6); // 3 vertices per triangle, 2 triangles per face, 6 faces

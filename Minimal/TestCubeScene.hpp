@@ -6,6 +6,7 @@
 #include "BasicShader.h"
 #include "Skybox.h"
 #include <vector>
+#include <map>
 
 enum SCENE_TYPE {
 	STEREO_CUBE, MONO, STEREO
