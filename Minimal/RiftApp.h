@@ -179,8 +179,7 @@ protected:
 			const auto& vp = _sceneLayer.Viewport[eye];
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
-			_sceneLayer.RenderPose[eye] = eyePoses[eye]; // do before switch.
-
+			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
 			// hand avatar rendering
 			{
@@ -192,7 +191,7 @@ protected:
 
 			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
 			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
-		//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
+			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
 		});
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -210,6 +209,10 @@ protected:
 	}
 
 	void lateUpdate() override {
+	}
+
+	void returnToFbo() {
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
 	}
 
 

@@ -140,6 +140,7 @@
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="SphereScene.cpp" />
     <ClCompile Include="TexturedCube.cpp" />
+    <ClCompile Include="TexturedPlane.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AvatarFragmentShader.glsl" />
@@ -205,6 +206,7 @@
     <ClInclude Include="TestingApp.hpp" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="TexturedCube.h" />
+    <ClInclude Include="TexturedPlane.h" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\arial.ttf" />

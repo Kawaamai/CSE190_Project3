@@ -54,16 +54,13 @@ protected:
 	// note: glm::inverse(headPose) is the camera matrix
 	void renderScene(const glm::mat4& projection, const glm::mat4& headPose, ovrEyeType eye) override
 	{
-		// TODO: setup offscreen buffers
-		// render screen to off screen buffers (done)
-		//caveScene->render(projection, glm::inverse(headPose), eye);
 		//scene->render(projection, glm::inverse(headPose), eye);
 		// thank you lambda functions <3
 		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
 			caveScene->render(projection, view, eye);
+			returnToFbo();
 		}, projection, glm::inverse(headPose), eye);
 
-		// render cubes with these textures
 		controllers->renderHands(projection, glm::inverse(headPose));
 	}
 
