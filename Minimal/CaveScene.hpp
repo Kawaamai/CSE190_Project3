@@ -158,6 +158,7 @@ public:
 
 			proj = glm::frustum(l, r, b, t, NEAR_PLANE, FAR_PLANE);
 			T = glm::translate(-pe);
+			//projPrime = proj * projectionPlanes[i].MT * T;
 			projPrime = proj * projectionPlanes[i].MT * T;
 
 			//renderCave(projPrime, view, eye);
