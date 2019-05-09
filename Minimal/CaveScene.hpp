@@ -10,8 +10,11 @@
 
 #include <functional>
 
-#define TEX_WIDTH 1080
-#define TEX_HEIGHT 1080
+//#define TEX_WIDTH 1340
+// these are determined by eyeSize gotten from ovr_GetFovTextureSize(...)
+// alternatively, call glViewport again with our screen size, but don't want to deal with that right now.
+#define TEX_WIDTH 1344
+#define TEX_HEIGHT 1600
 #define NUM_PLANES 3
 
 // near and far plane distances from RiftApp.h
@@ -150,11 +153,18 @@ public:
 			vc = projectionPlanes[i].pc - pe;
 			d = -glm::dot(projectionPlanes[i].vn, va); // distance
 
+			//std::cerr << (glm::dot(projectionPlanes[i].vr, va) + glm::dot(projectionPlanes[i].vr, vb)) << std::endl;
+			//std::cerr << (glm::dot(projectionPlanes[i].vu, va) + glm::dot(projectionPlanes[i].vu, vc)) << std::endl;
+
 			// frustrum edges
-			l = glm::dot(projectionPlanes[i].vr, va) * NEAR_PLANE / d;
-			r = glm::dot(projectionPlanes[i].vr, vb) * NEAR_PLANE / d;
-			b = glm::dot(projectionPlanes[i].vu, va) * NEAR_PLANE / d;
-			t = glm::dot(projectionPlanes[i].vu, vc) * NEAR_PLANE / d;
+			//l = glm::dot(projectionPlanes[i].vr, va) * NEAR_PLANE / d;
+			//r = glm::dot(projectionPlanes[i].vr, vb) * NEAR_PLANE / d;
+			//b = glm::dot(projectionPlanes[i].vu, va) * NEAR_PLANE / d;
+			//t = glm::dot(projectionPlanes[i].vu, vc) * NEAR_PLANE / d;
+			l = glm::dot(va, projectionPlanes[i].vr) * NEAR_PLANE / d;
+			r = glm::dot(vb, projectionPlanes[i].vr) * NEAR_PLANE / d;
+			b = glm::dot(va, projectionPlanes[i].vu) * NEAR_PLANE / d;
+			t = glm::dot(vc, projectionPlanes[i].vu) * NEAR_PLANE / d;
 
 			proj = glm::frustum(l, r, b, t, NEAR_PLANE, FAR_PLANE);
 			T = glm::translate(-pe);
@@ -166,7 +176,7 @@ public:
 			// implicit call to glBindFramebuffer to eye bufferfs in passed in lambda function
 		}
 
-		renderCave(projection, view, eye);
+		//renderCave(projection, view, eye);
 
 		for (int i = 0; i < NUM_PLANES; i++) {
 			plane->toWorld = instance_positions[i];

@@ -7,6 +7,10 @@
 #include "Skybox.h"
 #include <vector>
 
+enum DIRECTION {
+	UP, DOWN, LEFT, RIGHT, FORWARD, BACKWARD, NONE
+};
+
 // a class for building and rendering cubes
 class TestCubeSceneCave
 {
@@ -23,7 +27,9 @@ class TestCubeSceneCave
 	const float maxCubeScale = 0.25f; // 50cm = 200 * .25
 	const float minCubeScale = 0.05f; // 10cm = 200 * .05
 	const float cubeScaleInc = 0.05f;
+	const float cubeTranslationInc = 0.20f;
 	float curCubeScale = initCubeScale;
+	glm::vec3 curCubeTranslation = glm::vec3(0.0f);
 
 	// frame timing
 	float currentTime;
@@ -72,7 +78,7 @@ public:
 		for (unsigned int i = 0; i < instanceCount; i++)
 		{
 			// Scale to 20cm: 200cm * 0.1
-			cube->toWorld = instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
+			cube->toWorld = glm::translate(curCubeTranslation) * instance_positions[i] * glm::scale(glm::mat4(1.0f), glm::vec3(curCubeScale));
 			cube->draw(shaderID, projection, view);
 		}
 
@@ -93,6 +99,31 @@ public:
 		curCubeScale -= cubeScaleInc * getTimeDelta();
 		if (curCubeScale < minCubeScale)
 			curCubeScale = minCubeScale;
+	}
+
+	void move(DIRECTION dir) {
+		switch (dir) {
+		case RIGHT:
+			curCubeTranslation += glm::vec3(cubeTranslationInc * getTimeDelta(), 0.0f, 0.0f);
+			break;
+		case LEFT:
+			curCubeTranslation += glm::vec3(-cubeTranslationInc * getTimeDelta(), 0.0f, 0.0f);
+			break;
+		case FORWARD:
+			curCubeTranslation += glm::vec3(0.0f, 0.0f, cubeTranslationInc * getTimeDelta());
+			break;
+		case BACKWARD:
+			curCubeTranslation += glm::vec3(0.0f, 0.0f, -cubeTranslationInc * getTimeDelta());
+			break;
+		case UP:
+			curCubeTranslation += glm::vec3(0.0f, cubeTranslationInc * getTimeDelta(), 0.0f);
+			break;
+		case DOWN:
+			curCubeTranslation += glm::vec3(0.0f, -cubeTranslationInc * getTimeDelta(), 0.0f);
+			break;
+		default:
+			curCubeTranslation = glm::vec3(0.0f);
+		}
 	}
 
 	void resetCubeScale() {

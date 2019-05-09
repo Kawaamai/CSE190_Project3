@@ -21,6 +21,11 @@ class ExampleApp : public RiftApp
 
 	// lighting for phong shading
 	Lighting sceneLight = Lighting(glm::vec3(1.2f, 1.0f, 2.0f), glm::vec3(1.0f));
+	
+	// Project 3
+
+	// view perspective
+	bool controllerView = false;
 
 public:
 	ExampleApp()
@@ -70,7 +75,14 @@ protected:
 		//scene->render(projection, glm::inverse(headPose), eye);
 		// thank you lambda functions <3
 		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
-			caveScene->render(projection, view, eye);
+			if (controllerView) {
+				ovrPosef eyePoseMod = controllers->handPoses[ovrHand_Right];
+				eyePoseMod.Position = ovr::fromGlm(ovr::toGlm(eyePoseMod.Position) + ovr::toGlm(_viewScaleDesc.HmdToEyePose[eye].Position));
+				caveScene->render(projection, glm::inverse(ovr::toGlm(eyePoseMod)), eye);
+			}
+			else {
+				caveScene->render(projection, view, eye);
+			}
 			returnToFbo();
 		}, projection, glm::inverse(headPose), eye, eyePose);
 
@@ -105,6 +117,29 @@ protected:
 			caveScene->increaseCubeScale();
 		}
 
+		// cube translation
+		if (controllers->isThumbstickButtonDown(ovrHand_Right)) {
+			caveScene->move(NONE);
+		}
+		if (controllers->isThumbstickUp(ovrHand_Left)) {
+			caveScene->move(UP);
+		}
+		if (controllers->isThumbstickDown(ovrHand_Left)) {
+			caveScene->move(DOWN);
+		}
+		if (controllers->isThumbstickUp(ovrHand_Right)) {
+			caveScene->move(BACKWARD);
+		}
+		if (controllers->isThumbstickDown(ovrHand_Right)) {
+			caveScene->move(FORWARD);
+		}
+		if (controllers->isThumbstickLeft(ovrHand_Right)) {
+			caveScene->move(LEFT);
+		}
+		if (controllers->isThumbstickRight(ovrHand_Right)) {
+			caveScene->move(RIGHT);
+		}
+
 		if (controllers->r_AButtonDown()) { }
 
 		if (controllers->l_XButtonDown()) { }
@@ -115,7 +150,9 @@ protected:
 		if (controllers->isThumbstickLeft(ovrHand_Right)) { }
 		if (controllers->isThumbstickRight(ovrHand_Right)) { }
 
-		if (controllers->r_IndexTriggerDown()) { }
+		if (controllers->r_IndexTriggerDown()) {
+			controllerView = !controllerView;
+		}
 		if (controllers->l_IndexTriggerDown()) { }
 
 		if (controllers->r_HandTriggerDown()) { }

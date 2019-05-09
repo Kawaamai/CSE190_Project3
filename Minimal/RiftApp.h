@@ -47,7 +47,7 @@ private:
 	mat4 _eyeProjections[2];
 
 	ovrLayerEyeFov _sceneLayer;
-	ovrViewScaleDesc _viewScaleDesc;
+	//ovrViewScaleDesc _viewScaleDesc;
 
 	uvec2 _renderTargetSize;
 	uvec2 _mirrorSize;
@@ -85,6 +85,8 @@ public:
 	}
 
 protected:
+	ovrViewScaleDesc _viewScaleDesc; // Project3
+
 	GLFWwindow * createRenderingTarget(uvec2 & outSize, ivec2 & outPosition) override {
 		return glfw::createWindow(_mirrorSize);
 	}
@@ -178,6 +180,7 @@ protected:
 		ovr::for_each_eye([&](ovrEyeType eye) {
 			const auto& vp = _sceneLayer.Viewport[eye];
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
+			//std::cerr << "viewport: " << vp.Size.w << " " << vp.Size.h << std::endl;
 
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
