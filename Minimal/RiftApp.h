@@ -189,8 +189,9 @@ protected:
 				av->updateAvatar(_eyeProjections[eye], view, eyeWorld);
 			}
 
+			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye, eyePoses[eye]);
 			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye])); // score on hand
-			renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
+			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye); // score on hand
 			//renderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eyePoses[eye]); // score in hud
 		});
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
@@ -220,6 +221,7 @@ protected:
 	virtual void handleInput() = 0;
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) = 0;
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye) = 0;
+	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye, ovrPosef eyePose) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) = 0;
 };
