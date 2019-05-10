@@ -165,7 +165,6 @@ public:
 					debug_vertices[eye][12 * i + 9] = glm::vec3(0.0f);
 					debug_vertices[eye][12 * i + 10] = glm::vec3(tl);
 					debug_vertices[eye][12 * i + 11] = glm::vec3(bl);
-					std::cerr << (12 * i + 11) << std::endl;
 				}
 			});
 		}
@@ -240,7 +239,8 @@ public:
 
 		for (int i = 0; i < NUM_PLANES; i++) {
 			plane->toWorld = instance_positions[i];
-			plane->draw(projection, view, m_texture[i]);
+			//plane->draw(projection, view, m_texture[i]);
+			plane->draw(projection, view, m_texture[i], ovr::toGlm(eyePose.Position));
 		}
 
 		if (debugLines) {
@@ -330,5 +330,9 @@ public:
 		});
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glEnable(GL_CULL_FACE);
+	}
+
+	void toggleLightingMode() {
+		plane->lightingMode = plane->lightingModeMap.at(plane->lightingMode);
 	}
 };

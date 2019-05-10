@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Shader.h"
+#include <map>
 
 namespace PlaneData {
 	const float vertices[] = {
@@ -37,8 +38,19 @@ public:
 
 	glm::mat4 toWorld;
 	GLuint textureId;
-	Shader shader = Shader("basicTexture.vert", "basicTexture.frag");
 
+	enum LIGHTING_MODE {
+		REGULAR, LIGHTING_FALLOFF
+	};
+	std::map<LIGHTING_MODE, LIGHTING_MODE> lightingModeMap = {
+		{REGULAR, LIGHTING_FALLOFF}, {LIGHTING_FALLOFF, REGULAR}
+	};
+	LIGHTING_MODE lightingMode = REGULAR;
+
+	Shader shader = Shader("basicTexture.vert", "basicTexture.frag");
+	Shader lightingFalloffShader = Shader("brightnessFalloff.vert", "brightnessFalloff.frag");
+
+	void draw(const glm::mat4& projection, const glm::mat4& view, GLuint textureId, const glm::vec3 eyePos);
 	void draw(const glm::mat4& projection, const glm::mat4& view, GLuint textureId);
 	void draw(GLuint shaderProgram, const glm::mat4& projection, const glm::mat4& view);
 

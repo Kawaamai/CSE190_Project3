@@ -150,6 +150,12 @@
     <None Include="basicTexture.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="brightnessFalloff.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="brightnessFalloff.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">

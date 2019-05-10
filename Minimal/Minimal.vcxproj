@@ -153,6 +153,8 @@
     <None Include="basicTexture.frag" />
     <None Include="basicTexture.vert" />
     <None Include="basicVertex.vs" />
+    <None Include="brightnessFalloff.frag" />
+    <None Include="brightnessFalloff.vert" />
     <None Include="cube\back.ppm" />
     <None Include="cube\down.ppm" />
     <None Include="cube\front.ppm" />

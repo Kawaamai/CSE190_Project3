@@ -176,7 +176,9 @@ protected:
 
 		if (controllers->r_HandTriggerDown()) { }
 		if (controllers->l_HandTriggerDown()) { }
-		if (controllers->l_YButtonDown()) { }
+		if (controllers->l_YButtonDown()) {
+			scene->toggleLightingMode();
+		}
 
 		if (controllers->isTouchThumbRestPressed(ovrHand_Left) && controllers->isTouchThumbRestPressed(ovrHand_Right)) { }
 	}
