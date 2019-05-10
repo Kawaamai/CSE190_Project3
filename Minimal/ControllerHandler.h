@@ -151,11 +151,26 @@ public:
 		return ((currInputState.IndexTrigger[ovrHand_Left] > 0.5f) &&
 			(prevInputState.IndexTrigger[ovrHand_Left] < 0.5f));
 	}
+	bool r_IndexTriggerPressed() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
+		return currInputState.IndexTrigger[ovrHand_Right] > 0.5f;
+	}
+	bool l_IndexTriggerPressed() {
+		if (!gethandStatus(ovrHand_Left))
+			return false;
+		return currInputState.IndexTrigger[ovrHand_Left] > 0.5f;
+	}
 	bool r_AButtonDown() {
 		if (!gethandStatus(ovrHand_Right))
 			return false;
 		return ((currInputState.Buttons & ovrButton_A) &&
 			((prevInputState.Buttons & ovrButton_A) == 0));
+	}
+	bool r_AButtonPressed() {
+		if (!gethandStatus(ovrHand_Right))
+			return false;
+		return currInputState.Buttons & ovrButton_A;
 	}
 	bool r_BButtonDown() {
 		if (!gethandStatus(ovrHand_Right))

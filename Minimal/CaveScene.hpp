@@ -7,6 +7,7 @@
 #include "Skybox.h"
 #include "Plane.h"
 #include "TexturedPlane.h"
+#include "Shader.h"
 
 #include <functional>
 
@@ -51,15 +52,20 @@ class CaveScene
 	std::unique_ptr<TexturedPlane> plane;
 	std::array<ProjectionPlane, NUM_PLANES> projectionPlanes;
 
-	//GLuint m_fbo;
-	//GLuint m_texture;
-	//GLuint m_rbo;
-
 	GLuint m_fbo[NUM_PLANES];
 	GLuint m_texture[NUM_PLANES];
 	GLuint m_rbo[NUM_PLANES];
 
+	// debug lines
+	GLuint debug_vao[2], debug_vbo[2];
+	//std::vector<glm::vec3> debug_vertices[2];
+	glm::vec3 debug_vertices[2][12 * 3];
+
+	Shader debug_shader = Shader("basicColor.vert", "basicColor.frag");
+
 public:
+	bool debugLines = false;
+
 	CaveScene() {
 		// Shader Program 
 		shaderId = LoadShaders("skybox.vert", "skybox.frag");
@@ -127,6 +133,60 @@ public:
 				//std::cerr << projectionPlanes[i].pc.x << " " << projectionPlanes[i].pc.y << " " << projectionPlanes[i].pc.z << " " << std::endl;
 			}
 		}
+
+		// ----------------------------------------------------------------------------------------------
+		// init debug object
+		// create vertices
+		{
+			using namespace PlaneData;
+			ovr::for_each_eye([&](ovrEyeType eye) {
+				for (int i = 0; i < NUM_PLANES; i++) {
+					glm::vec3 tr = instance_positions[i] * glm::vec4(topRight, 1.0f);
+					glm::vec3 br = instance_positions[i] * glm::vec4(bottomRight, 1.0f);
+					glm::vec3 bl = instance_positions[i] * glm::vec4(bottomLeft, 1.0f);
+					glm::vec3 tl = instance_positions[i] * glm::vec4(topLeft, 1.0f);
+
+					// top
+					debug_vertices[eye][12 * i + 0] = glm::vec3(0.0f);
+					debug_vertices[eye][12 * i + 1] = glm::vec3(tr);
+					debug_vertices[eye][12 * i + 2] = glm::vec3(tl);
+
+					// right
+					debug_vertices[eye][12 * i + 3] = glm::vec3(0.0f);
+					debug_vertices[eye][12 * i + 4] = glm::vec3(br);
+					debug_vertices[eye][12 * i + 5] = glm::vec3(tr);
+
+					// left
+					debug_vertices[eye][12 * i + 6] = glm::vec3(0.0f);
+					debug_vertices[eye][12 * i + 7] = glm::vec3(bl);
+					debug_vertices[eye][12 * i + 8] = glm::vec3(br);
+
+					// bottom
+					debug_vertices[eye][12 * i + 9] = glm::vec3(0.0f);
+					debug_vertices[eye][12 * i + 10] = glm::vec3(tl);
+					debug_vertices[eye][12 * i + 11] = glm::vec3(bl);
+					std::cerr << (12 * i + 11) << std::endl;
+				}
+			});
+		}
+
+		glGenVertexArrays(2, debug_vao);
+		glGenBuffers(2, debug_vbo);
+
+		ovr::for_each_eye([&](ovrEyeType eye) {
+			glBindVertexArray(debug_vao[eye]);
+			glBindBuffer(GL_ARRAY_BUFFER, debug_vbo[eye]);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(debug_vertices[eye]), debug_vertices[eye], GL_DYNAMIC_DRAW);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
+		});
+	}
+
+	~CaveScene() {
+		glDeleteVertexArrays(2, debug_vao);
+		glDeleteBuffers(2, debug_vbo);
 	}
 
 	void render(
@@ -134,7 +194,8 @@ public:
 		const glm::mat4& projection,
 		const glm::mat4& view,
 		const ovrEyeType eye,
-		const ovrPosef eyePose
+		const ovrPosef eyePose,
+		bool updateScreen = true
 	) {
 		glm::vec3 pe = ovr::toGlm(eyePose.Position);
 		glm::vec3 va, vb, vc;
@@ -142,38 +203,37 @@ public:
 		glm::mat4 proj, projPrime, T;
 		// calcuate correct projection
 
-		for (int i = 0; i < NUM_PLANES; i++) {
-			glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
-			glClearColor(0.1f, 0.1f, 1.0f, 1.0f);
-			glClear(GL_DEPTH_BUFFER_BIT);
+		if (updateScreen) {
+			for (int i = 0; i < NUM_PLANES; i++) {
+				glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
+				glClearColor(0.1f, 0.1f, 1.0f, 1.0f);
+				glClear(GL_DEPTH_BUFFER_BIT);
 
-			// camera to plane vectors
-			va = projectionPlanes[i].pa - pe;
-			vb = projectionPlanes[i].pb - pe;
-			vc = projectionPlanes[i].pc - pe;
-			d = -glm::dot(projectionPlanes[i].vn, va); // distance
+				// camera to plane vectors
+				va = projectionPlanes[i].pa - pe;
+				vb = projectionPlanes[i].pb - pe;
+				vc = projectionPlanes[i].pc - pe;
+				d = -glm::dot(projectionPlanes[i].vn, va); // distance
 
-			//std::cerr << (glm::dot(projectionPlanes[i].vr, va) + glm::dot(projectionPlanes[i].vr, vb)) << std::endl;
-			//std::cerr << (glm::dot(projectionPlanes[i].vu, va) + glm::dot(projectionPlanes[i].vu, vc)) << std::endl;
+				//std::cerr << (glm::dot(projectionPlanes[i].vr, va) + glm::dot(projectionPlanes[i].vr, vb)) << std::endl;
+				//std::cerr << (glm::dot(projectionPlanes[i].vu, va) + glm::dot(projectionPlanes[i].vu, vc)) << std::endl;
 
-			// frustrum edges
-			//l = glm::dot(projectionPlanes[i].vr, va) * NEAR_PLANE / d;
-			//r = glm::dot(projectionPlanes[i].vr, vb) * NEAR_PLANE / d;
-			//b = glm::dot(projectionPlanes[i].vu, va) * NEAR_PLANE / d;
-			//t = glm::dot(projectionPlanes[i].vu, vc) * NEAR_PLANE / d;
-			l = glm::dot(va, projectionPlanes[i].vr) * NEAR_PLANE / d;
-			r = glm::dot(vb, projectionPlanes[i].vr) * NEAR_PLANE / d;
-			b = glm::dot(va, projectionPlanes[i].vu) * NEAR_PLANE / d;
-			t = glm::dot(vc, projectionPlanes[i].vu) * NEAR_PLANE / d;
+				// frustrum edges
+				l = glm::dot(projectionPlanes[i].vr, va) * NEAR_PLANE / d;
+				r = glm::dot(projectionPlanes[i].vr, vb) * NEAR_PLANE / d;
+				b = glm::dot(projectionPlanes[i].vu, va) * NEAR_PLANE / d;
+				t = glm::dot(projectionPlanes[i].vu, vc) * NEAR_PLANE / d;
 
-			proj = glm::frustum(l, r, b, t, NEAR_PLANE, FAR_PLANE);
-			T = glm::translate(-pe);
-			//projPrime = proj * projectionPlanes[i].MT * T;
-			projPrime = proj * projectionPlanes[i].MT * T;
+				proj = glm::frustum(l, r, b, t, NEAR_PLANE, FAR_PLANE);
+				T = glm::translate(-pe);
+				//projPrime = proj * projectionPlanes[i].MT * T;
+				projPrime = (proj * projectionPlanes[i].MT) * T;
 
-			//renderCave(projPrime, view, eye);
-			renderCave(projPrime, view, eye);
-			// implicit call to glBindFramebuffer to eye bufferfs in passed in lambda function
+				glm::mat4 v = glm::inverse(ovr::toGlm(eyePose));
+				//renderCave(projPrime, view, eye);
+				renderCave(projPrime, v, eye);
+				// implicit call to glBindFramebuffer to eye bufferfs in passed in lambda function
+			}
 		}
 
 		//renderCave(projection, view, eye);
@@ -181,6 +241,12 @@ public:
 		for (int i = 0; i < NUM_PLANES; i++) {
 			plane->toWorld = instance_positions[i];
 			plane->draw(projection, view, m_texture[i]);
+		}
+
+		if (debugLines) {
+			updateDebugVertices(eye, ovr::toGlm(eyePose.Position));
+			updateDebugBuffer(eye);
+			renderDebug(projection, view, eye);
 		}
 
 		if (eye == ovrEye_Left)
@@ -216,5 +282,53 @@ public:
 		//	skybox->draw(shaderId, projection, view);
 		//else
 		//	skyboxRight->draw(shaderId, projection, view);
+	}
+
+	void updateDebugVertices(ovrEyeType eye, glm::vec3 eyePos = glm::vec3(0.0f)) {
+		// create vertices
+		{
+			using namespace PlaneData;
+			for (int i = 0; i < NUM_PLANES; i++) {
+				// top
+				debug_vertices[eye][12 * i + 0] = glm::vec3(eyePos);
+				// right
+				debug_vertices[eye][12 * i + 3] = glm::vec3(eyePos);
+				// left
+				debug_vertices[eye][12 * i + 6] = glm::vec3(eyePos);
+				// bottom
+				debug_vertices[eye][12 * i +  9] = glm::vec3(eyePos);
+			}
+		}
+	}
+
+	void updateDebugBuffer(ovrEyeType eye) {
+			glBindVertexArray(debug_vao[eye]);
+			glBindBuffer(GL_ARRAY_BUFFER, debug_vbo[eye]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(debug_vertices[eye]), debug_vertices[eye]);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindVertexArray(0);
+	}
+
+	void renderDebug(const glm::mat4& projection, const glm::mat4& view, ovrEyeType eye) {
+		glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		ovr::for_each_eye([&](ovrEyeType eye) {
+			debug_shader.use();
+			// give info to shader
+			// TODO: fix shader names
+			debug_shader.setMat4("ProjectionMatrix", projection);
+			debug_shader.setMat4("CameraMatrix", view);
+			if (eye == ovrEye_Left)
+				debug_shader.setVec4("Color", glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+			else
+				debug_shader.setVec4("Color", glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+			glBindVertexArray(debug_vao[eye]);
+			glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
+			glBindVertexArray(0);
+		});
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glEnable(GL_CULL_FACE);
 	}
 };

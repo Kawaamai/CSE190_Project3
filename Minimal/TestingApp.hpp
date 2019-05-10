@@ -26,6 +26,7 @@ class ExampleApp : public RiftApp
 
 	// view perspective
 	bool controllerView = false;
+	bool updateScreen = true;
 
 public:
 	ExampleApp()
@@ -72,19 +73,25 @@ protected:
 	/// with added eyePose
 	void renderScene(const glm::mat4& projection, const glm::mat4& headPose, ovrEyeType eye, ovrPosef eyePose) override
 	{
+		if (controllerView) {
+			ovrPosef eyePoseMod = controllers->handPoses[ovrHand_Right];
+			eyePoseMod.Position
+				= ovr::fromGlm(ovr::toGlm(eyePoseMod.Position)
+					+ glm::vec3(
+						glm::mat4_cast(ovr::toGlm(controllers->handPoses[ovrHand_Right].Orientation))
+						* glm::vec4(ovr::toGlm(_viewScaleDesc.HmdToEyePose[eye].Position), 1.0f)
+					)
+				);
+			//caveScene->render(projection, glm::inverse(ovr::toGlm(eyePoseMod)), eye);
+			eyePose = eyePoseMod;
+		}
+
 		//scene->render(projection, glm::inverse(headPose), eye);
 		// thank you lambda functions <3
 		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
-			if (controllerView) {
-				ovrPosef eyePoseMod = controllers->handPoses[ovrHand_Right];
-				eyePoseMod.Position = ovr::fromGlm(ovr::toGlm(eyePoseMod.Position) + ovr::toGlm(_viewScaleDesc.HmdToEyePose[eye].Position));
-				caveScene->render(projection, glm::inverse(ovr::toGlm(eyePoseMod)), eye);
-			}
-			else {
-				caveScene->render(projection, view, eye);
-			}
+			caveScene->render(projection, view, eye);
 			returnToFbo();
-		}, projection, glm::inverse(headPose), eye, eyePose);
+		}, projection, glm::inverse(headPose), eye, eyePose, updateScreen);
 
 		controllers->renderHands(projection, glm::inverse(headPose));
 	}
@@ -141,17 +148,29 @@ protected:
 		}
 
 		if (controllers->r_AButtonDown()) { }
+		if (controllers->r_AButtonPressed()) {
+			scene->debugLines = true;
+		}
+		else {
+			scene->debugLines = false;
+		}
 
 		if (controllers->l_XButtonDown()) { }
 
-		if (controllers->r_BButtonDown()) { }
+		if (controllers->r_BButtonDown()) {
+			updateScreen = !updateScreen;
+		}
 
 		if (controllers->isThumbstickButtonDown(ovrHand_Right)) { }
 		if (controllers->isThumbstickLeft(ovrHand_Right)) { }
 		if (controllers->isThumbstickRight(ovrHand_Right)) { }
 
-		if (controllers->r_IndexTriggerDown()) {
-			controllerView = !controllerView;
+		if (controllers->r_IndexTriggerDown()) { }
+		if (controllers->r_IndexTriggerPressed()) {
+			controllerView = true;
+		}
+		else {
+			controllerView = false;
 		}
 		if (controllers->l_IndexTriggerDown()) { }
 
