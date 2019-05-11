@@ -36,7 +36,7 @@ TexturedPlane::~TexturedPlane()
 void TexturedPlane::draw(const glm::mat4 & projection, const glm::mat4 & view, GLuint textureId, const glm::vec3 eyePos)
 {
 	switch (lightingMode) {
-	case LIGHTING_FALLOFF:
+	case LIGHTING_FALLOFF: {
 		lightingFalloffShader.use();
 		lightingFalloffShader.setMat4("Projection", projection);
 		lightingFalloffShader.setMat4("View", view);
@@ -48,8 +48,26 @@ void TexturedPlane::draw(const glm::mat4 & projection, const glm::mat4 & view, G
 		glBindTexture(GL_TEXTURE_2D, textureId);
 		lightingFalloffShader.setInt("tex", 0);
 		break;
+	}
 
-	default:
+	case VIGNETTE: {
+		glm::vec3 P0 = glm::vec3(toWorld * glm::vec4(PlaneData::lightPos, 1.0f));
+
+		vignetteShader.use();
+		vignetteShader.setMat4("Projection", projection);
+		vignetteShader.setMat4("View", view);
+		vignetteShader.setMat4("Model", toWorld);
+		vignetteShader.setVec3("lightPos", P0);
+		vignetteShader.setVec3("eyePos", eyePos);
+		//vignetteShader.setVec3("Normal", glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureId);
+		vignetteShader.setInt("tex", 0);
+		break;
+	}
+
+	default: {
 		shader.use();
 		shader.setMat4("Projection", projection);
 		shader.setMat4("View", view);
@@ -58,6 +76,7 @@ void TexturedPlane::draw(const glm::mat4 & projection, const glm::mat4 & view, G
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureId);
 		shader.setInt("tex", 0);
+	}
 	}
 
 	glBindVertexArray(vao);

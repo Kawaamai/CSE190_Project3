@@ -44,9 +44,9 @@ class CaveScene
 	// scaled
 	const float scale = 2.4f;
 	std::array<glm::mat4, NUM_PLANES> instance_positions = {
-		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -1.2f)) * glm::scale(glm::vec3(scale)),
-		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -1.2f)) * glm::scale(glm::vec3(scale)),
-		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -1.2f)) * glm::scale(glm::vec3(scale))
+		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -(scale/2))) * glm::scale(glm::vec3(scale)),
+		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -(scale/2))) * glm::scale(glm::vec3(scale)),
+		glm::rotate(glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::translate(glm::vec3(0.0f, 0.0f, -(scale/2))) * glm::scale(glm::vec3(scale))
 	};
 	//std::unique_ptr<Plane> plane;
 	std::unique_ptr<TexturedPlane> plane;

@@ -156,6 +156,12 @@
     <None Include="brightnessFalloff.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="vignette.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="vignette.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">

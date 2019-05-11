@@ -180,6 +180,8 @@
     <None Include="skybox\up.ppm" />
     <None Include="textShader.frag" />
     <None Include="textShader.vert" />
+    <None Include="vignette.frag" />
+    <None Include="vignette.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AvatarHandler.h" />
