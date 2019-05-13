@@ -33,7 +33,7 @@ class CaveScene
 	GLuint basicShaderId;
 
 	std::unique_ptr<Skybox> skybox;
-	std::unique_ptr<Skybox> skyboxRight;
+	//std::unique_ptr<Skybox> skyboxRight;
 
 	// unscaled
 	//std::array<glm::mat4, 3> instance_positions = {
@@ -72,10 +72,11 @@ public:
 		basicShaderId = LoadShaders("basicColor.vert", "basicColor.frag");
 
 		// 10m wide sky box: size doesn't matter though
-		skybox = std::make_unique<Skybox>("skybox");
+		//skybox = std::make_unique<Skybox>("skybox");
+		skybox = std::make_unique<Skybox>("sb_frozendusk");
 		skybox->toWorld = glm::scale(glm::mat4(1.0f), glm::vec3(5.0f));
-		skyboxRight = std::make_unique<Skybox>("skybox_righteye");
-		skyboxRight->toWorld = glm::scale(glm::mat4(1.0f), glm::vec3(5.0f));
+		//skyboxRight = std::make_unique<Skybox>("skybox_righteye");
+		//skyboxRight->toWorld = glm::scale(glm::mat4(1.0f), glm::vec3(5.0f));
 
 		//plane = std::make_unique<Plane>();
 		plane = std::make_unique<TexturedPlane>();
@@ -235,8 +236,6 @@ public:
 			}
 		}
 
-		//renderCave(projection, view, eye);
-
 		for (int i = 0; i < NUM_PLANES; i++) {
 			plane->toWorld = instance_positions[i];
 			//plane->draw(projection, view, m_texture[i]);
@@ -249,10 +248,11 @@ public:
 			renderDebug(projection, view, eye);
 		}
 
-		if (eye == ovrEye_Left)
-			skybox->draw(shaderId, projection, view);
-		else
-			skyboxRight->draw(shaderId, projection, view);
+		skybox->draw(shaderId, projection, view);
+		//if (eye == ovrEye_Left)
+		//	skybox->draw(shaderId, projection, view);
+		//else
+		//	skyboxRight->draw(shaderId, projection, view);
 	}
 
 	void render(
