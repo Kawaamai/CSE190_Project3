@@ -87,13 +87,15 @@ protected:
 		}
 
 		//scene->render(projection, glm::inverse(headPose), eye);
+		//caveScene->render(projection, glm::inverse(headPose), eye);
 		// thank you lambda functions <3
-		scene->render([&](const glm::mat4& projection, const glm::mat4& view, const ovrEyeType eye) {
-			caveScene->render(projection, view, eye);
+		scene->render([&](const glm::mat4& p, const glm::mat4& v, const ovrEyeType e) {
+			caveScene->render(p, v, e);
+			controllers->renderHands(p, v);
 			returnToFbo();
 		}, projection, glm::inverse(headPose), eye, eyePose, updateScreen);
 
-		controllers->renderHands(projection, glm::inverse(headPose));
+		//controllers->renderHands(projection, glm::inverse(headPose));
 	}
 
 	void update() override {
