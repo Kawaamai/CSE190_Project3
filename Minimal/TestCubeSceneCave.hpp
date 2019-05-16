@@ -131,7 +131,8 @@ public:
 	}
 
 	float getTimeDelta() {
-		return currentTime - lastTime;
+		return 1.0f;
+		//return currentTime - lastTime;
 	}
 
 	void updateTime() {

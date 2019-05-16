@@ -91,31 +91,16 @@ void ControllerHandler::renderHands(const glm::mat4 & projection, const glm::mat
 {
 	std::vector<glm::mat4> instance_positions;
 	// update
-	//updateHands();
-	getRingAt(smoothingBuffer, smoothingIdx)[ovrHand_Left] = ovr::toGlm(handPoses[ovrHand_Left].Position);
-	getRingAt(smoothingBuffer, smoothingIdx)[ovrHand_Right] = ovr::toGlm(handPoses[ovrHand_Right].Position);
 
 	// render hands
 	if (handStatus[ovrHand_Left]) {
 		//renderHand(projection, modelview, handPoses[0].Position);
-		glm::vec3 handPosition;
-		//ovrVector3f handPosition = handPoses[ovrHand_Left].Position;
-		if (!smoothing && !lag)
-			handPosition = ovr::toGlm(handPoses[ovrHand_Left].Position);
-		else
-			handPosition = calcSmoothPos(ovrHand_Left);
-		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		glm::vec3 handPosition = ovr::toGlm(handPoses[ovrHand_Left].Position);
 		glm::mat4 transform = glm::translate(glm::mat4(1.0), handPosition);
 		instance_positions.push_back(transform);
 	}
 	if (handStatus[ovrHand_Right]) {
-		glm::vec3 handPosition;
-		//ovrVector3f handPosition = handPoses[ovrHand_Right].Position;
-		if (!smoothing && !lag)
-			handPosition = ovr::toGlm(handPoses[ovrHand_Right].Position);
-		else
-			handPosition = calcSmoothPos(ovrHand_Right);
-		//glm::mat4 transform = glm::translate(glm::mat4(1.0), glm::vec3(handPosition.x, handPosition.y, handPosition.z));
+		glm::vec3 handPosition = ovr::toGlm(handPoses[ovrHand_Right].Position);
 		glm::mat4 transform = glm::translate(glm::mat4(1.0), handPosition);
 		instance_positions.push_back(transform);
 	}
