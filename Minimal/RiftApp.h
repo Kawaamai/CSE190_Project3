@@ -169,14 +169,6 @@ protected:
 
 		handleInput();
 
-		int curIndex;
-		ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
-		GLuint curTexId;
-		ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
-		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		ovr::for_each_eye([&](ovrEyeType eye) {
 			const auto& vp = _sceneLayer.Viewport[eye];
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
@@ -184,6 +176,14 @@ protected:
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 			prerenderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye, eyePoses[eye]);
 		});
+
+		int curIndex;
+		ovr_GetTextureSwapChainCurrentIndex(_session, _eyeTexture, &curIndex);
+		GLuint curTexId;
+		ovr_GetTextureSwapChainBufferGL(_session, _eyeTexture, curIndex, &curTexId);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _fbo);
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, curTexId, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ovr::for_each_eye([&](ovrEyeType eye) {
 			const auto& vp = _sceneLayer.Viewport[eye];

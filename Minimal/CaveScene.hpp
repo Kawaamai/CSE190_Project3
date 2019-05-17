@@ -265,7 +265,7 @@ public:
 		bool controllerView = false
 	) {
 
-		returnFbo();
+		/* returnFbo(); */
 
 		std::cerr << eye << std::endl;
 		for (int i = 0; i < NUM_PLANES; i++) {

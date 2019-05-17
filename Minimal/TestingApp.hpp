@@ -99,9 +99,9 @@ protected:
 			//caveScene->render(p, v * glm::scale(glm::vec3(1/2.4f)), e);
 			caveScene->render(p, v, e);
 			//controllers->renderHands(p, v);
-			returnToFbo();
+			/* returnToFbo(); */
 		}, [&]() {
-			returnToFbo();
+			/* returnToFbo(); */
 		}, projection, glm::inverse(headPose), eye, eyePose, updateScreen, controllerView);
 
 		controllers->renderHands(projection, glm::inverse(headPose));
@@ -132,9 +132,9 @@ protected:
 			//caveScene->render(p, v * glm::scale(glm::vec3(1/2.4f)), e);
 			caveScene->render(p, v, e);
 			//controllers->renderHands(p, v);
-			returnToFbo();
+			/* returnToFbo(); */
 		}, [&]() {
-			returnToFbo();
+			/* returnToFbo(); */
 		}, projection, glm::inverse(headPose), eye, eyePose, updateScreen, controllerView);
 
 		controllers->renderHands(projection, glm::inverse(headPose));
