@@ -106,6 +106,40 @@ protected:
 
 		controllers->renderHands(projection, glm::inverse(headPose));
 	}
+	void prerenderScene(const glm::mat4& projection, const glm::mat4& headPose, ovrEyeType eye, ovrPosef eyePose) override
+	{
+		if (controllerView) {
+			ovrPosef eyePoseMod = controllers->handPoses[ovrHand_Right];
+			//glm::vec3 eyePos = ovr::toGlm(eyePoseMod.Position) + glm::vec3(glm::mat4_cast(ovr::toGlm(controllers->handPoses[ovrHand_Right].Orientation)) * glm::vec4(ovr::toGlm(_viewScaleDesc.HmdToEyePose[eye].Position), 1.0f));
+			//std::cerr << eye << "\t" << eyePos.x << " " << eyePos.y << " " << eyePos.z << std::endl;
+			eyePoseMod.Position
+				= ovr::fromGlm(ovr::toGlm(eyePoseMod.Position)
+					+ glm::vec3(
+						glm::mat4_cast(ovr::toGlm(controllers->handPoses[ovrHand_Right].Orientation))
+						* glm::vec4(ovr::toGlm(_viewScaleDesc.HmdToEyePose[eye].Position), 1.0f)
+					)
+				);
+			//caveScene->render(projection, glm::inverse(ovr::toGlm(eyePoseMod)), eye);
+			eyePose = eyePoseMod;
+		}
+
+		//scene->render(projection, glm::inverse(headPose), eye);
+		//caveScene->render(projection, glm::inverse(headPose), eye);
+		// thank you lambda functions <3
+
+		scene->prerender([&](const glm::mat4& p, const glm::mat4& v, const ovrEyeType e) {
+			//caveScene->render(p, glm::scale(glm::vec3(1/2.4f)) * v, e);
+			//caveScene->render(p, v * glm::scale(glm::vec3(1/2.4f)), e);
+			caveScene->render(p, v, e);
+			//controllers->renderHands(p, v);
+			returnToFbo();
+		}, [&]() {
+			returnToFbo();
+		}, projection, glm::inverse(headPose), eye, eyePose, updateScreen, controllerView);
+
+		controllers->renderHands(projection, glm::inverse(headPose));
+	}
+
 
 	void update() override {
 		controllers->updateHandState();

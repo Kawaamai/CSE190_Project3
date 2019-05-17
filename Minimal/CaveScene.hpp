@@ -192,8 +192,7 @@ public:
 		glDeleteVertexArrays(2, debug_vao);
 		glDeleteBuffers(2, debug_vbo);
 	}
-
-	void render(
+	void prerender(
 		const std::function<void(const glm::mat4&, const glm::mat4&, const ovrEyeType)> renderCave,
 		const std::function<void()> returnFbo,
 		const glm::mat4& projection,
@@ -253,6 +252,18 @@ public:
 				// implicit call to glBindFramebuffer to eye bufferfs in passed in lambda function
 			}
 		}
+	}
+
+	void render(
+		const std::function<void(const glm::mat4&, const glm::mat4&, const ovrEyeType)> renderCave,
+		const std::function<void()> returnFbo,
+		const glm::mat4& projection,
+		const glm::mat4& view,
+		const ovrEyeType eye,
+		const ovrPosef eyePose,
+		bool updateScreen = true,
+		bool controllerView = false
+	) {
 
 		returnFbo();
 

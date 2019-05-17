@@ -182,6 +182,7 @@ protected:
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
+			prerenderScene(_eyeProjections[eye], ovr::toGlm(eyePoses[eye]), eye, eyePoses[eye]);
 		});
 
 		ovr::for_each_eye([&](ovrEyeType eye) {
@@ -229,6 +230,7 @@ protected:
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose) = 0;
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye) = 0;
 	virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye, ovrPosef eyePose) = 0;
+	virtual void prerenderScene(const glm::mat4 & projection, const glm::mat4 & headPose, ovrEyeType eye, ovrPosef eyePose) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const ovrPosef camera) = 0;
 	//virtual void renderScene(const glm::mat4 & projection, const glm::mat4 & headPose, const glm::vec3 & headPos) = 0;
 };
