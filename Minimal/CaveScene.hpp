@@ -52,9 +52,9 @@ class CaveScene
 	std::unique_ptr<TexturedPlane> plane;
 	std::array<ProjectionPlane, NUM_PLANES> projectionPlanes;
 
-	GLuint m_fbo[NUM_PLANES];
-	GLuint m_texture[NUM_PLANES];
-	GLuint m_rbo[NUM_PLANES];
+	GLuint m_fbo[NUM_PLANES * 2];
+	GLuint m_texture[NUM_PLANES * 2];
+	GLuint m_rbo[NUM_PLANES * 2];
 
 	// debug lines
 	GLuint debug_vao[2], debug_vbo[2];
@@ -85,11 +85,15 @@ public:
 		// TODO: setup offscreen buffeers
 		// generate framebuffer
 		//glGenFramebuffers(1, &m_fbo);
-		glGenFramebuffers(NUM_PLANES, m_fbo);
-		glGenTextures(NUM_PLANES, m_texture);
-		glGenRenderbuffers(NUM_PLANES, m_rbo);
+		glGenFramebuffers(NUM_PLANES * 2, m_fbo);
+		glGenTextures(NUM_PLANES * 2, m_texture);
+		glGenRenderbuffers(NUM_PLANES * 2, m_rbo);
+		//glGenFramebuffers(6, m_fbo);
+		//glGenTextures(6, m_texture);
+		//glGenRenderbuffers(6, m_rbo);
 
-		for (int i = 0; i < NUM_PLANES; i++) {
+		for (int i = 0; i < NUM_PLANES * 2; i++) {
+			std::cerr << i << std::endl;
 			glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
 
 			// generate texture to render to
@@ -105,8 +109,8 @@ public:
 			//glGenRenderbuffers(1, &m_rbo);
 			glBindRenderbuffer(GL_RENDERBUFFER, m_rbo[i]);
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, TEX_WIDTH, TEX_HEIGHT);
-			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo[i]);
+			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
@@ -191,11 +195,13 @@ public:
 
 	void render(
 		const std::function<void(const glm::mat4&, const glm::mat4&, const ovrEyeType)> renderCave,
+		const std::function<void()> returnFbo,
 		const glm::mat4& projection,
 		const glm::mat4& view,
 		const ovrEyeType eye,
 		const ovrPosef eyePose,
-		bool updateScreen = true
+		bool updateScreen = true,
+		bool controllerView = false
 	) {
 		glm::vec3 pe = ovr::toGlm(eyePose.Position);
 		glm::vec3 va, vb, vc;
@@ -205,7 +211,10 @@ public:
 
 		if (updateScreen) {
 			for (int i = 0; i < NUM_PLANES; i++) {
-				glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
+				if (eye == ovrEye_Left)
+					glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i]);
+				else
+					glBindFramebuffer(GL_FRAMEBUFFER, m_fbo[i + 3]);
 				glClearColor(0.1f, 0.1f, 1.0f, 1.0f);
 				glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -214,6 +223,7 @@ public:
 				vb = projectionPlanes[i].pb - pe;
 				vc = projectionPlanes[i].pc - pe;
 				d = -glm::dot(projectionPlanes[i].vn, va); // distance
+				//d = -glm::dot(va, projectionPlanes[i].vn); // distance
 
 				//std::cerr << (glm::dot(projectionPlanes[i].vr, va) + glm::dot(projectionPlanes[i].vr, vb)) << std::endl;
 				//std::cerr << (glm::dot(projectionPlanes[i].vu, va) + glm::dot(projectionPlanes[i].vu, vc)) << std::endl;
@@ -225,21 +235,39 @@ public:
 				t = glm::dot(projectionPlanes[i].vu, vc) * NEAR_PLANE / d;
 
 				proj = glm::frustum(l, r, b, t, NEAR_PLANE, FAR_PLANE);
-				T = glm::translate(-pe);
+				//T = glm::translate(-pe/2.4f); // idk why this is needed?
+				T = glm::translate(-pe); // idk why this is needed?
+				//projPrime = proj * projectionPlanes[i].MT * T;
 				projPrime = proj * projectionPlanes[i].MT * T;
 				//projPrime = (proj * projectionPlanes[i].MT) * T;
 
 				glm::mat4 v = glm::inverse(ovr::toGlm(eyePose));
 				//renderCave(projPrime, view, eye);
-				renderCave(projPrime, v, eye);
+				//if (controllerView)
+				//	//renderCave(projPrime, v, eye);
+				//	renderCave(projPrime, glm::mat4(1.0f), eye);
+				//	//renderCave(projPrime, view, eye);
+				//else
+				//	renderCave(projPrime, view, eye);
+				renderCave(projPrime, glm::mat4(1.0f), eye);
 				// implicit call to glBindFramebuffer to eye bufferfs in passed in lambda function
 			}
 		}
 
+		returnFbo();
+
+		std::cerr << eye << std::endl;
 		for (int i = 0; i < NUM_PLANES; i++) {
 			plane->toWorld = instance_positions[i];
 			//plane->draw(projection, view, m_texture[i]);
-			plane->draw(projection, view, m_texture[i], ovr::toGlm(eyePose.Position));
+			if (eye == ovrEye_Left) {
+				plane->draw(projection, view, m_texture[i], ovr::toGlm(eyePose.Position));
+				std::cerr << m_texture[i] << std::endl;
+			}
+			else {
+				plane->draw(projection, view, m_texture[i + 3], ovr::toGlm(eyePose.Position));
+				std::cerr << m_texture[i + 3] << std::endl;
+			}
 		}
 
 		if (debugLines) {

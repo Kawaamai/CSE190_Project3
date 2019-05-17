@@ -182,6 +182,13 @@ protected:
 			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
 
 			_sceneLayer.RenderPose[eye] = eyePoses[eye];
+		});
+
+		ovr::for_each_eye([&](ovrEyeType eye) {
+			const auto& vp = _sceneLayer.Viewport[eye];
+			glViewport(vp.Pos.x, vp.Pos.y, vp.Size.w, vp.Size.h);
+
+			_sceneLayer.RenderPose[eye] = eyePoses[eye];
 
 			// hand avatar rendering
 			{
